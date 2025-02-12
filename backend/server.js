@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { connectionTracker } from "./loaders/connectionTracker.js";
 import sessionLoader from "./loaders/sessionLoader.js";
 import passportLoader from "./loaders/passportLoader.js";
+import jsonParserLoader from "./loaders/jsonParserLoader.js";
 
 dotenv.config();
 
@@ -14,7 +15,7 @@ const app = express();
 
 // Middleware and app configuration
 app.set('trust proxy', 1);
-app.use(express.json());
+jsonParserLoader(app);
 morganLoader(app);
 corsLoader(app);
 connectionTracker(app);
