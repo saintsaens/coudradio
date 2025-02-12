@@ -2,10 +2,13 @@ import React from 'react';
 import { useEffect } from "react";
 import { Typography } from "@mui/material";
 
-const handleSubscribe = () => {
-    const stripeUrl = `https://buy.stripe.com/test_aEUdRm0qIafx3LObII`;
+const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
-    window.location.href = stripeUrl;
+const handleSubscribe = () => {
+    console.log("Flying off to Stripe!");
+    const paymentLink = "https://buy.stripe.com/test_aEUdRm0qIafx3LObII";
+
+    window.location.href = paymentLink; // Redirect user to Google
 };
 
 const Subscribe = () => {
