@@ -13,7 +13,8 @@ const sessionLoader = (app) => {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "prod",
+      // secure: process.env.NODE_ENV === "prod",
+      secure: false,
       sameSite: process.env.NODE_ENV === 'prod' ? 'None' : 'Lax',
       maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
     },
