@@ -29,9 +29,6 @@ const passportLoader = (app) => {
                 // User exists, fetch their info
                 const userId = credentials.user_id
                 const existingUser = await getUserById(userId);
-                const startTime = existingUser.session_start_time
-                const lastActivity = existingUser.last_activity_time;
-                const timeSpent = existingUser.time_spent;
 
                 if (!existingUser) {
                     console.log("User not found in users table.");
@@ -40,9 +37,11 @@ const passportLoader = (app) => {
                 return cb(null, { 
                     id: existingUser.id,
                     username: existingUser.username,
-                    sessionStartTime: startTime,
-                    lastActivity: lastActivity,
-                    timeSpent: timeSpent,
+                    role: existingUser.role,
+                    sessionStartTime: existingUser.session_start_time,
+                    lastActivity: existingUser.last_activity_time,
+                    timeSpent: existingUser.time_spent,
+                    subscribed: existingUser.subscribed,
                 });
             }
         } catch (err) {
@@ -56,9 +55,11 @@ const passportLoader = (app) => {
             cb(null, {
                 id: user.id,
                 username: user.username,
+                role: user.role,
                 sessionStartTime: user.sessionStartTime,
                 lastActivity: user.lastActivity,
                 timeSpent: user.timeSpent,
+                subscribed: user.subscribed,
             });
         });
     });
