@@ -3,7 +3,10 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
-    const response = await fetch(`${baseUrl}/auth/user/profile`, { credentials: 'include' });
+    const response = await fetch(`${baseUrl}/auth/user/profile`, {
+        credentials: 'include'
+    });
+    
     if (response.ok) {
         const data = await response.json();
         return ({
