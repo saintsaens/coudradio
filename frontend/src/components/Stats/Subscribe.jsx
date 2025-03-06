@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import { Typography } from "@mui/material";
 
 const handleSubscribe = () => {
+    const stripeUrl = `https://buy.stripe.com/test_aEUdRm0qIafx3LObII`;
+
+    window.location.href = stripeUrl;
 };
 
 const Subscribe = () => {
