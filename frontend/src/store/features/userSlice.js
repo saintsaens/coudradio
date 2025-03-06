@@ -12,10 +12,11 @@ export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
         return ({
             userId: data.id,
             username: data.username,
-            isSubscriber: data.isSubscriber,
+            role: data.role,
             sessionStartTime: data.sessionStartTime,
             lastActivity: data.lastActivity,
             timeSpent: data.timeSpent,
+            isSubscriber: data.isSubscriber,
         });
     }
     throw new Error('Not logged in');
@@ -52,21 +53,13 @@ const userSlice = createSlice({
     initialState: {
         userId: '',
         username: '',
-        isSubscriber: false,
+        role: "user",
         sessionStartTime: '',
         lastActivity: '',
         timeSpent: 0,
+        isSubscriber: false,
         status: 'idle',
         error: null
-    },
-    reducers: {
-        clearUser: (state) => {
-            state.userId = '';
-            state.username = '';
-            state.isSubscriber = false,
-            state.status = 'idle';
-            state.error = null;
-        },
     },
     extraReducers: (builder) => {
         builder
@@ -77,6 +70,7 @@ const userSlice = createSlice({
                 state.status = 'succeeded';
                 state.userId = action.payload.userId;
                 state.username = action.payload.username;
+                state.role = action.payload.role;
                 state.sessionStartTime = action.payload.sessionStartTime;
                 state.lastActivity = action.payload.lastActivity;
                 state.timeSpent = action.payload.timeSpent;
@@ -88,7 +82,5 @@ const userSlice = createSlice({
             });
     },
 });
-
-export const { clearUser } = userSlice.actions;
 
 export default userSlice.reducer;
