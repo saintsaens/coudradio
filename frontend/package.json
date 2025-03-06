@@ -40,5 +40,5 @@
     "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
   },
-  "proxy": "http://localhost:3001"
+  "proxy": "https://localhost:3001"
 }
