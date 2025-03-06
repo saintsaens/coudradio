@@ -17,9 +17,6 @@ export const logout = async (req, res) => {
 };
 
 export const getUserProfile = (req, res) => {
-    console.log("Session Data:", req.session);
-    console.log("Cookies:", req.headers.cookie);
-
     if (req.isAuthenticated()) {
         res.json({
             id: req.user.id,
