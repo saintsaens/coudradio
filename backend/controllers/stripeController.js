@@ -1,3 +1,4 @@
+import { handleSuccessfulSessionCheckout } from "../services/stripeService.js";
 import stripe from "../stripe/index.js";
 
 export const webhook = async (request, response) => {
@@ -21,11 +22,11 @@ export const webhook = async (request, response) => {
 
     // Handle the event
     switch (event.type) {
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object;
-            console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
-            // Then define and call a method to handle the successful payment intent.
-            // handlePaymentIntentSucceeded(paymentIntent);
+        case 'checkout.session.succeeded':
+            const session = event.data.object;
+            const userId = session.client_reference_id;
+            console.log(`User ${userId} paid successfully!`);
+            handleSuccessfulSessionCheckout(userId);
             break;
         default:
             // Unexpected event type

@@ -9,7 +9,7 @@ const Subscribe = () => {
     const { userId } = useSelector((state) => state.user);
     
     const handleSubscribe = () => {
-        const paymentLink = `${paymentBaseUrl}?userId=${userId}`;
+        const paymentLink = `${paymentBaseUrl}?client_reference_id=${userId}`;
         window.location.href = paymentLink;
     };
 
