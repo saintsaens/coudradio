@@ -22,7 +22,7 @@ export const webhook = async (request, response) => {
 
     // Handle the event
     switch (event.type) {
-        case 'checkout.session.succeeded':
+        case 'checkout.session.completed':
             const session = event.data.object;
             const userId = session.client_reference_id;
             console.log(`User ${userId} paid successfully!`);

@@ -36,6 +36,6 @@ if (process.env.NODE_ENV !== "prod") {
     });
 } else {
     app.listen(PORT, () => {
-        console.log("🚀 Backend running on http://localhost:3001");
+        console.log("🚀 Listening on port 3001");
     });
 }
