@@ -16,7 +16,7 @@ export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
             sessionStartTime: data.sessionStartTime,
             lastActivity: data.lastActivity,
             timeSpent: data.timeSpent,
-            isSubscriber: data.isSubscriber,
+            isSubscriber: data.subscribed,
         });
     }
     throw new Error('Not logged in');

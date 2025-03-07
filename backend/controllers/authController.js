@@ -24,6 +24,7 @@ export const getUserProfile = (req, res) => {
             sessionStartTime: req.user.sessionStartTime,
             lastActivity: req.user.lastActivity,
             timeSpent: req.user.timeSpent,
+            subscribed: req.user.subscribed,
         });
     } else {
         res.status(401).json({ error: "User not authenticated" });
