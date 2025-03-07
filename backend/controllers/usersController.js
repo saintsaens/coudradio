@@ -42,6 +42,7 @@ export const updateUser = async (req, res) => {
 export const updateUserActivity = async (req, res) => {
     if (req.isAuthenticated()) {
         try {
+            // Get user data from the current session
             const userId = req.user.id;
             const sessionStartTime = req.user.sessionStartTime;
 
