@@ -1,6 +1,6 @@
 import * as usersRepository from "../repositories/usersRepository.js"
 
-export const handleSuccessfulSessionCheckout = async (userId) => {
+export const handleSuccessfulSessionCheckout = async (req, userId) => {
     const subscribed = true;
 
     // Update user’s subscribed status in the session
