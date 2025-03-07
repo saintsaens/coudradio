@@ -26,7 +26,7 @@ export const webhook = async (request, response) => {
             const session = event.data.object;
             const userId = session.client_reference_id;
             console.log(`User ${userId} paid successfully!`);
-            handleSuccessfulSessionCheckout(request, userId);
+            handleSuccessfulSessionCheckout(userId);
             break;
         default:
             // Unexpected event type
