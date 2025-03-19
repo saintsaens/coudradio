@@ -1,3 +1,4 @@
+import * as usersService from "../services/usersService.js";
 import passport from "passport";
 
 const frontendURL = process.env.FRONTEND_URL;
@@ -16,8 +17,12 @@ export const logout = async (req, res) => {
     });
 };
 
-export const getUserProfile = (req, res) => {
+export const getUserProfile = async (req, res) => {
     if (req.isAuthenticated()) {
+        // Fetch user subscription status from the database (not from the session)
+        const user = await usersService.getUserById(req.user.id);
+        req.user.subscribed = user.subscribed;
+
         res.json({
             id: req.user.id,
             username: req.user.username,
