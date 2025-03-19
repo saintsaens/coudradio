@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from "react-redux";
-import { Typography, Stack } from "@mui/material";
+import { Stack } from "@mui/material";
 import Escape from "./Escape";
 import Login from "./Login";
 import Logout from "./Logout";
