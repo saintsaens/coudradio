@@ -24,7 +24,7 @@ const Login = () => {
     }, []);
 
     return (
-        <Typography variant="body2">L: Login</Typography>
+        <Typography variant="body2">L: Login (Google)</Typography>
     );
 };
 
