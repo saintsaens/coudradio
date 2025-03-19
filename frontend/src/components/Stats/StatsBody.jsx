@@ -8,11 +8,13 @@ const StatsBody = () => {
 
     return (
         <Stack spacing={2} alignItems="center">
-            {username &&
-                <Typography variant="body1">{`Logged in as ${username}.`}</Typography>
-            }
+            {username ? (
+                <Typography variant="body1">{`Recording listening time as ${username}.`}</Typography>
+            ) : (
+                <Typography variant="body1">Log in to record your listening time.</Typography>
+            )}
             {!isSubscriber &&
-                <Typography>Subscribe for 5€/month to see your listening time.</Typography>
+                <Typography>Subscribe (5€/month) to see it.</Typography>
             }
             {isSubscriber &&
                 <ListeningTime />
