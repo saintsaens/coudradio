@@ -10,7 +10,7 @@ const Subscribe = () => {
     
     const handleSubscribe = () => {
         const paymentLink = `${paymentBaseUrl}?client_reference_id=${userId}`;
-        window.location.href = paymentLink;
+        window.open(paymentLink, "_blank", "noopener,noreferrer");
     };
 
     useEffect(() => {
