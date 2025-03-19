@@ -5,6 +5,7 @@ import Escape from "./Escape";
 import Login from "./Login";
 import Logout from "./Logout";
 import Subscribe from "./Subscribe";
+import ManageSubscription from "./ManageSubscription";
 
 const StatsCommands = () => {
     const { username, isSubscriber } = useSelector((state) => state.user);
@@ -13,7 +14,7 @@ const StatsCommands = () => {
         <Stack spacing={1}>
             <Escape />
             {!username ? <Login /> : <Logout />}
-            {!isSubscriber && <Subscribe />}
+            {!isSubscriber ? <Subscribe /> : <ManageSubscription />}
         </Stack>
     );
 };
