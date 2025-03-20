@@ -14,7 +14,7 @@ const StatsBody = () => {
                 <Typography variant="body1">Log in to record your listening time.</Typography>
             )}
             {!isSubscriber &&
-                <Typography>Subscribe (5€/month) to see it.</Typography>
+                <Typography>Subscribe for 5€/month to see it.</Typography>
             }
             {isSubscriber &&
                 <ListeningTime />
