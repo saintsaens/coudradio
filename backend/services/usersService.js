@@ -3,9 +3,9 @@ import * as usersRepository from "../repositories/usersRepository.js"
 
 const saltRounds = 10;
 
-export const createUser = async (username, password) => {
-    if (!username || !password) {
-        throw new Error("Username and password are required");
+export const createUser = async (username, password, email) => {
+    if (!username || !password || !email) {
+        throw new Error("Username, password and email are required");
     }
 
     const hashedPw = await bcrypt.hash(password, saltRounds);
@@ -22,15 +22,16 @@ export const createUser = async (username, password) => {
         sessionStartTime,
         lastActivityTime,
         timeSpent,
-        subscribed
+        subscribed,
+        email
     );
     
     return result;
 };
 
-export const createUserWithoutPassword = async (username) => {
-    if (!username) {
-        throw new Error("Username is required");
+export const createUserWithoutPassword = async (username, email) => {
+    if (!username || !email) {
+        throw new Error("Username and email are required");
     }
     
     const hashedPw = null;
@@ -47,7 +48,8 @@ export const createUserWithoutPassword = async (username) => {
         sessionStartTime,
         lastActivityTime,
         timeSpent,
-        subscribed
+        subscribed,
+        email
     );
 
     return result;
@@ -59,9 +61,9 @@ export const getUserById = async (id) => {
     return result;
 };
 
-export const updateUser = async (id, { username, password, role, sessionStartTime, lastActivityTime, timeSpent, subscribed }) => {
+export const updateUser = async (id, { username, password, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email }) => {
     const hashedPw = password ? await bcrypt.hash(password, saltRounds) : null;
-    const result = await usersRepository.updateUser(id, { username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed });
+    const result = await usersRepository.updateUser(id, { username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email });
 
     return result;
 };

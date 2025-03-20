@@ -13,6 +13,7 @@ vi.mock("../../repositories/usersRepository.js", () => ({
 
 const mockUsername = "testuser";
 const mockHashedPassword = "hashedpassword123";
+const mockEmail = "test@test.com";
 
 vi.mock("bcrypt", () => ({
     default: {
@@ -23,22 +24,22 @@ vi.mock("bcrypt", () => ({
 describe("createUser", () => {
   
   it("should throw an error if username is missing", async () => {
-    await expect(createUser(null, mockHashedPassword)).rejects.toThrow("Username and password are required");
+    await expect(createUser(null, mockHashedPassword, mockEmail)).rejects.toThrow("Username, password and email are required");
   });
   
   it("should throw an error if password is missing", async () => {
-    await expect(createUser(mockUsername, null)).rejects.toThrow("Username and password are required");
-  });
-  
-  it("should throw an error if both username and password are missing", async () => {
-    await expect(createUser(null, null)).rejects.toThrow("Username and password are required");
+    await expect(createUser(mockUsername, null, mockEmail)).rejects.toThrow("Username, password and email are required");
   });
 
-  it("should not throw any error if both username and password are provided", async () => {
+  it("should throw an error if email is missing", async () => {
+    await expect(createUser(mockUsername, mockHashedPassword, null)).rejects.toThrow("Username, password and email are required");
+  });
+
+  it("should not throw any error if username, password and email are provided", async () => {
     const mockUser = { id: 1, username: "testuser" };
     usersRepository.createUser.mockResolvedValueOnce(mockUser);
 
-    const result = await createUser(mockUsername, mockHashedPassword);
+    const result = await createUser(mockUsername, mockHashedPassword, mockEmail);
 
     expect(result).toEqual(mockUser);
   });

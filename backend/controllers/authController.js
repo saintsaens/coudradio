@@ -33,6 +33,7 @@ export const getUserProfile = async (req, res) => {
             lastActivity: req.user.lastActivity,
             timeSpent: req.user.timeSpent,
             subscribed: req.user.subscribed,
+            email: req.user.email
         });
     } else {
         res.status(401).json({ error: "User not authenticated" });

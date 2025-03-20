@@ -17,6 +17,7 @@ export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
             lastActivity: data.lastActivity,
             timeSpent: data.timeSpent,
             isSubscriber: data.subscribed,
+            email: data.email
         });
     }
     throw new Error('Not logged in');
@@ -58,6 +59,7 @@ const userSlice = createSlice({
         lastActivity: '',
         timeSpent: 0,
         isSubscriber: false,
+        email: '',
         status: 'idle',
         error: null
     },
@@ -75,6 +77,7 @@ const userSlice = createSlice({
                 state.lastActivity = action.payload.lastActivity;
                 state.timeSpent = action.payload.timeSpent;
                 state.isSubscriber = action.payload.isSubscriber;
+                state.email = action.payload.email;
             })
             .addCase(fetchUser.rejected, (state, action) => {
                 state.status = 'failed';

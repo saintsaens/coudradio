@@ -2,14 +2,14 @@ import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
 
 export const createUser = async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
 
-    if (!username || !password) {
+    if (!username || !password || !email) {
         return res.status(400).json({ error: "Missing fields" });
     }
 
     try {
-        const newUser = await usersService.createUser(username, password);
+        const newUser = await usersService.createUser(username, password, email);
         return res.status(201).json({ message: "User created successfully", user: newUser });
     } catch (err) {
         console.error(err);  // Log the error for debugging
@@ -19,14 +19,14 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
     const { id } = req.params;
-    const { username, password, role, sessionStartTime, lastActivity } = req.body;
+    const { username, password, role, sessionStartTime, lastActivity, email } = req.body;
 
-    if (!username && !password && !role && !sessionStartTime && !lastActivity) {
+    if (!username && !password && !role && !sessionStartTime && !lastActivity && !email) {
         return res.status(400).json({ error: "At least one field must be provided" });
     }
 
     try {
-        const updatedUser = await usersService.updateUser(id, { username, password, role, sessionStartTime, lastActivity });
+        const updatedUser = await usersService.updateUser(id, { username, password, role, sessionStartTime, lastActivity, email });
 
         if (!updatedUser) {
             return res.status(404).json({ error: "User not found" });

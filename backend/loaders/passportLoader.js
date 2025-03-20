@@ -42,6 +42,7 @@ const passportLoader = (app) => {
                     lastActivity: existingUser.last_activity_time,
                     timeSpent: existingUser.time_spent,
                     subscribed: existingUser.subscribed,
+                    email: existingUser.email,
                 });
             }
         } catch (err) {
@@ -60,6 +61,7 @@ const passportLoader = (app) => {
                 lastActivity: user.lastActivity,
                 timeSpent: user.timeSpent,
                 subscribed: user.subscribed,
+                email: user.email,
             });
         });
     });

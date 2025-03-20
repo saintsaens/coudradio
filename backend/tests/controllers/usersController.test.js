@@ -7,7 +7,7 @@ import { Request, Response } from 'express';
 vi.mock('../../services/usersService.js');
 
 describe('User Controller Tests', () => {
-    
+
     let req, res;
 
     beforeEach(() => {
@@ -22,7 +22,7 @@ describe('User Controller Tests', () => {
     });
 
     describe('createUser', () => {
-        test('should return 400 if missing username or password', async () => {
+        test('should return 400 if missing username, password or email', async () => {
             req.body = {}; // Empty request body
             await createUser(req, res);
             expect(res.status).toHaveBeenCalledWith(400);
@@ -30,12 +30,12 @@ describe('User Controller Tests', () => {
         });
 
         test('should return 201 on successful user creation', async () => {
-            req.body = { username: 'testuser', password: 'password123' };
-            const mockUser = { id: 1, username: 'testuser' };
+            req.body = { username: 'testuser', password: 'password123', email: "test@test.com" };
+            const mockUser = { id: 1, username: 'testuser', email: "test@test.com" };
             usersService.createUser.mockResolvedValue(mockUser);
 
             await createUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
                 message: 'User created successfully',
@@ -44,11 +44,11 @@ describe('User Controller Tests', () => {
         });
 
         test('should return 500 if there is an internal server error', async () => {
-            req.body = { username: 'testuser', password: 'password123' };
+            req.body = { username: 'testuser', password: 'password123', email: "test@test.com" };
             usersService.createUser.mockRejectedValue(new Error('Error creating user'));
 
             await createUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
         });
@@ -70,7 +70,7 @@ describe('User Controller Tests', () => {
             usersService.updateUser.mockResolvedValue(mockUpdatedUser);
 
             await updateUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({
                 message: 'User updated successfully',
@@ -84,7 +84,7 @@ describe('User Controller Tests', () => {
             usersService.updateUser.mockResolvedValue(null);
 
             await updateUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
         });
@@ -95,7 +95,7 @@ describe('User Controller Tests', () => {
             usersService.updateUser.mockRejectedValue(new Error('Error updating user'));
 
             await updateUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
         });
@@ -107,7 +107,7 @@ describe('User Controller Tests', () => {
             usersService.deleteUser.mockResolvedValue(null);
 
             await deleteUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
         });
@@ -117,7 +117,7 @@ describe('User Controller Tests', () => {
             usersService.deleteUser.mockResolvedValue(true);
 
             await deleteUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({ message: 'User deleted successfully' });
         });
@@ -127,7 +127,7 @@ describe('User Controller Tests', () => {
             usersService.deleteUser.mockRejectedValue(new Error('Error deleting user'));
 
             await deleteUser(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
         });
@@ -139,7 +139,7 @@ describe('User Controller Tests', () => {
             usersService.getUserById.mockResolvedValue(null);
 
             await getUserById(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
         });
@@ -150,7 +150,7 @@ describe('User Controller Tests', () => {
             usersService.getUserById.mockResolvedValue(mockUser);
 
             await getUserById(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith(mockUser);
         });
@@ -160,7 +160,7 @@ describe('User Controller Tests', () => {
             usersService.getUserById.mockRejectedValue(new Error('Error fetching user'));
 
             await getUserById(req, res);
-            
+
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ error: 'Error fetching user' });
         });
