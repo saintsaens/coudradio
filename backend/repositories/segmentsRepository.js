@@ -1,4 +1,4 @@
-import { minioClient } from "../db/index.js";
+import { minioClient } from "../db-media/index.js";
 
 const bucket = process.env.MINIO_SEGMENTS_BUCKET;
 

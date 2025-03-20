@@ -9,3 +9,15 @@ export const generateStartTime = async () => {
     // return elapsed;
     return now;
 };
+
+export const computeTimeSpent = (startTime, currentTime) => {
+    const start = new Date(startTime);
+    const current = new Date(currentTime);
+    const diffSeconds = Math.floor((current - start) / 1000);
+
+    if (diffSeconds < 0) {
+        throw new Error("currentTime must be after startTime");
+    }
+
+    return diffSeconds;
+};

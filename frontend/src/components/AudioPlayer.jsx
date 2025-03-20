@@ -3,16 +3,12 @@ import dashjs from "dashjs";
 import { computeStartTime } from "../utils/time.js";
 import { useDispatch, useSelector } from "react-redux";
 import { setMuted, checkStream, setPlaying } from "../store/features/audioPlayerSlice.js";
-import MuteToggler from "./MuteToggler.jsx";
-import ChannelSwitcher from "./ChannelSwitcher.jsx";
-import Title from "./Title.jsx";
+import Background from "./Background.jsx";
 
 const AudioPlayer = ({ audioRef, channelName }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const src = `${backendUrl}/${channelName}`;
   const playlistDuration = useSelector((state) => state.audioPlayer.playlistDuration);
-  const error = useSelector((state) => state.audioPlayer.error);
-  const playing = useSelector((state) => state.audioPlayer.playing);
   const dispatch = useDispatch();
   let player = null; // Keep track of the Dash.js player instance
 
@@ -74,32 +70,10 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     };
   }, [src, dispatch]);
 
-  if (error) {
-    return (
-      <div className="overlay-text">
-        Coudradio not available right now.
-      </div>
-    );
-  }
-
   return (
-    <>
-      {!playing && (
-        <div className="overlay">
-          <div className="overlay-text">
-            Loading…
-          </div>
-        </div>
-      )}
+    <Background>
       <video ref={audioRef} />
-      {playing && (
-        <>
-          <Title channelName={channelName} />
-          <MuteToggler audioRef={audioRef} />
-          <ChannelSwitcher />
-        </>
-      )}
-    </>
+    </Background>
   );
 };
 

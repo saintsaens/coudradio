@@ -1,0 +1,146 @@
+.champions-title {
+    margin: 70px;
+}
+
+.champions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10%;
+}
+
+
+.champion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: border 0.3s ease-in-out;
+    padding: 40px;
+}
+
+.champion-img {
+    height: 177px;
+}
+
+.champion-text {
+    text-align: center;
+    color: var(--fourth-color);
+    font-size: 1.4rem;
+    width: 170px;
+}
+
+.champion:hover {
+    border-color: var(--fourth-color);
+    cursor: pointer;
+}
+
+/* BUTLER PAGES */
+
+.butler-container {
+    position: absolute;
+    top: 10%; /* Set the top of the container to 10% of the viewport height */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.butler-image {
+    width: 100px;
+    margin: 20px;
+}
+
+.butler-text {
+    font-size: 1.4rem;
+    text-align: justify;
+    margin: 50px 20px;
+    width: 900px;
+}
+
+.butler-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20%;
+    margin: 20px;
+}
+
+.butler-button {
+    padding: 20px 40px;
+    border: 1px solid var(--fourth-color);
+    border-radius: 10px;
+    cursor: pointer;
+    width: 300px;
+    background-color: transparent;
+    color: var(--text-color-white);
+}
+
+.butler-button-text {
+    font-size: 1.4rem;
+    margin: 0;
+    opacity: 0.5;
+}
+
+.butler-button:hover {
+    background-color: var(--fourth-color);
+    color: var(--text-color-black);
+}
+
+/* ANIMATIONS */
+
+.champions-title {
+    opacity: 0;
+    animation: fadeIn 1s ease-out forwards;
+    animation-delay: 1s;
+}
+
+.champions {
+    opacity: 0;
+    animation: fadeInFull 2s ease-in forwards;
+    animation-delay: 3s;
+}
+
+.butler-text p {
+    opacity: 0;
+    animation: fadeIn 1s ease-out forwards;
+}
+
+.butler-text p:nth-child(1) {
+    animation-delay: 1.5s;
+}
+
+.butler-text p:nth-child(2) {
+    animation-delay: 4s;
+}
+
+.butler-text p:nth-child(3) {
+    animation-delay: 6.5s;
+}
+
+.butler-buttons button {
+    opacity: 0;
+    animation: fadeInFull 1s ease-out forwards;
+    animation-delay: 7.5s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 0.5;
+    }
+}
+
+@keyframes fadeInFull {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

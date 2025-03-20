@@ -168,11 +168,11 @@ const createUnifiedMpdPeriods = async (tracks, singleMpdPaths) => {
 };
 
 const createInitSegmentRoute = (trackIndex) => {
-    return `${process.env.BACKEND_URL}/api/segment/track${trackIndex}_init.mp4`;
+    return `${process.env.BACKEND_URL}/segment/track${trackIndex}_init.mp4`;
 };
 
 const createMediaSegmentRoute = (trackIndex) => {
-    return `${process.env.BACKEND_URL}/api/segment/track${trackIndex}_$Number$.m4s`;
+    return `${process.env.BACKEND_URL}/segment/track${trackIndex}_$Number$.m4s`;
 };
 
 export const uploadMpd = async (mpdPath) => {

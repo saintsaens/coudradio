@@ -1,5 +1,6 @@
 export const connectionTracker = (app) => {
     const connections = new Map(); // Tracks IPs and their last connection time
+    const INTERVAL = 30 * 60 * 1000;
 
     // Middleware to track connections
     app.use((req, res, next) => {
@@ -9,10 +10,8 @@ export const connectionTracker = (app) => {
         // Update or add the IP in the Map
         connections.set(ip, now);
 
-        // Clean up entries older than 10 minutes
-        const TEN_MINUTES = 10 * 60 * 1000;
         for (const [key, timestamp] of connections) {
-            if (now - timestamp > TEN_MINUTES) {
+            if (now - timestamp > INTERVAL * 2) {
                 connections.delete(key);
             }
         }
@@ -22,10 +21,10 @@ export const connectionTracker = (app) => {
 
     // Periodically log the number of unique connections and the IPs
     setInterval(() => {
-        console.log(`Unique connections in the past 10 minutes: ${connections.size}`);
+        console.log(`Unique connections in the past 30 minutes: ${connections.size}`);
         
         for (const [ip] of connections) {
             console.log(`IP: ${ip}`);
         }
-    }, 10* 1000); // Every 10 seconds
+    }, INTERVAL);
 };

@@ -1,4 +1,4 @@
-import { getBucketByChannel, minioClient } from "../db/index.js";
+import { getBucketByChannel, minioClient } from "../db-media/index.js";
 
 export const getTrack = async (channel, trackName) => {
     const bucket = getBucketByChannel(channel);

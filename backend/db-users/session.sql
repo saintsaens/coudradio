@@ -1,0 +1,5 @@
+CREATE TABLE session (
+    sid VARCHAR(255) PRIMARY KEY,
+    sess JSON NOT NULL,
+    expire TIMESTAMP WITH TIME ZONE NOT NULL
+);
