@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { setMuted } from "../../store/features/audioPlayerSlice";
+import MobileChannelContainer from "../MobileChannelContainer";
 
 const MobileMuteToggler = ({ audioRef }) => {
     const isMuted = useSelector((state) => state.audioPlayer.isMuted);
@@ -20,7 +21,7 @@ const MobileMuteToggler = ({ audioRef }) => {
                 ?
                 <MobileUnmuteCommand onClick={handleToggleMute} />
                 :
-                <ChannelContainer channelName={channelName} onClick={handleToggleMute} />
+                <MobileChannelContainer channelName={channelName} onClick={handleToggleMute} />
             }
         </>
     );
