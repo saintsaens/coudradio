@@ -21,6 +21,9 @@ export const getUserProfile = async (req, res) => {
     if (req.isAuthenticated()) {
         // Fetch user subscription status from the database (not from the session)
         const user = await usersService.getUserById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
         req.user.subscribed = user.subscribed;
 
         res.json({
