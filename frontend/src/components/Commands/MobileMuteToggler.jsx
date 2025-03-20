@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setMuted } from "../../store/features/audioPlayerSlice";
 import MobileChannelContainer from "../MobileChannelContainer";
 import { Typography, Button } from "@mui/material";
+
 const MobileMuteToggler = ({ audioRef, channelName }) => {
     const isMuted = useSelector((state) => state.audioPlayer.isMuted);
     const dispatch = useDispatch();
