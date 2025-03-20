@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { setMuted } from "../../store/features/audioPlayerSlice";
-import WebCommands from "./WebCommands";
 import WebUnmuteCommand from "./WebUnmuteCommand";
 import ChannelSwitcher from "./ChannelSwitcher";
 import ChannelContainer from "../ChannelContainer";

@@ -4,7 +4,6 @@ import { setMuted } from "../../store/features/audioPlayerSlice";
 
 const MobileMuteToggler = ({ audioRef }) => {
     const isMuted = useSelector((state) => state.audioPlayer.isMuted);
-    const error = useSelector((state) => state.audioPlayer.error);
     const dispatch = useDispatch();
 
     const handleToggleMute = () => {
@@ -17,24 +16,12 @@ const MobileMuteToggler = ({ audioRef }) => {
 
     return (
         <>
-            {isMuted && (
-                <div className="unmute-overlay">
-                    <button
-                        className="unmute-button-mobile"
-                        onClick={handleToggleMute}
-                    >
-                        {!error && "Unmute"}
-                    </button>
-                </div>
-            )}
-            <div className="mute-label">
-                <button
-                    className="mute-button-mobile"
-                    onClick={handleToggleMute}
-                >
-                    {!isMuted && 'Tap: mute'}
-                </button>
-            </div>
+            {isMuted
+                ?
+                <MobileUnmuteCommand onClick={handleToggleMute} />
+                :
+                <ChannelContainer channelName={channelName} onClick={handleToggleMute} />
+            }
         </>
     );
 };
