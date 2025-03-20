@@ -12,6 +12,8 @@ export default function MobileChannelContainer({ channelName }) {
             <Grid size={12} sx={{ height: "60%" }}>
                 <Body channelName={channelName} />
             </Grid>
+            <Grid size={12} sx={{ height: "20%" }}>
+            </Grid>
         </Grid>
     );
 }
