@@ -9,7 +9,7 @@ const ManageSubscription = () => {
 
     useEffect(() => {
         const handleKeyDown = (event) => {
-            if (!(event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+            if (!(event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "m") {
                 event.preventDefault(); // Prevent default browser behavior
                 handleManageSubscription();
             }
@@ -20,7 +20,7 @@ const ManageSubscription = () => {
     }, []);
 
     return (
-        <Typography variant="body2">S: Manage subscription</Typography>
+        <Typography variant="body2">M: Manage subscription</Typography>
     );
 };
 
