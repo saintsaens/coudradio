@@ -3,7 +3,7 @@ import { Typography } from "@mui/material";
 
 const ManageSubscription = () => {
     const handleManageSubscription = () => {
-        const customerPortalUrl = "https://billing.stripe.com/p/login/28o4jm7A0d4d0gw8ww";
+        const customerPortalUrl = import.meta.env.VITE_MANAGE_SUBSCRIPTION_URL;
         window.open(customerPortalUrl, "_blank", "noopener,noreferrer");
     };
 
