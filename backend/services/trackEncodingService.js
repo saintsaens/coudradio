@@ -1,4 +1,9 @@
 import ffmpeg from 'fluent-ffmpeg';
+import path from "path";
+import fs from "fs";
+import util from "util";
+
+const unlink = util.promisify(fs.unlink);
 
 export const encodeTrack = (index, playlist, channelPath) => {
     const currentTrack = playlist[index];
@@ -31,6 +36,9 @@ export const encodeTrack = (index, playlist, channelPath) => {
 
 export const encodeTracks = async (playlist, channel) => {
     const channelPath = `./public/${channel}`;
+    if (!fs.existsSync(channelPath)) {
+        fs.mkdirSync(channelPath, { recursive: true });
+    }
     const mpdPaths = [];
     
     for (let index = 0; index < playlist.length; index++) {

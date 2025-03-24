@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import xml2js from 'xml2js';
 import * as mpdRepository from "../repositories/mpdRepository.js"
 import { encodeTracks } from "./trackEncodingService.js";
@@ -96,14 +97,16 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
 export const createMpd = (channel) => {
     const mpdPath = createUnifiedMpdPath(channel);
     const mpdHeader = createUnifiedMpdHeader();
-    
+    const directory = path.dirname(mpdPath);
     try {
+        if (!fs.existsSync(directory)) {
+            fs.mkdirSync(directory, { recursive: true });
+        }
         fs.writeFileSync(mpdPath, mpdHeader);
+        return mpdPath;
     } catch (error) {
         throw new Error(`Failed to create MPD file at ${mpdPath}: ${error.message}`);
     }
-    
-    return mpdPath;
 };
 
 export const addContentToMpd = (mpdPath, content) => {
