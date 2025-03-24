@@ -9,8 +9,7 @@
     "test:ui": "vitest --ui",
     "start-server": "node server.js",
     "start-server-dev": "nodemon server.js",
-    "create-radio:coudrier": "node createRadio.js coudrier",
-    "create-radio:lofi": "node createRadio.js lofi",
+    "create-radio": "node createRadio.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },

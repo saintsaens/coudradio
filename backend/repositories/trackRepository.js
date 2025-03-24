@@ -1,38 +1,38 @@
-import { getBucketByChannel, minioClient } from "../db-media/index.js";
-
-export const getTrack = async (channel, trackName) => {
-    const bucket = getBucketByChannel(channel);
-    if (!bucket) {
-        throw new Error(`Invalid channel: ${channel}`);
-    }
-    const stream = await minioClient.getObject(bucket, trackName);
-    return stream;
-};
+import { minioClient } from "../db-media/index.js";
 
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
 
-export const getTracks = async (channel) => {
-    const bucket = getBucketByChannel(channel);
-    if (!bucket) {
+export const getTrack = async (channel, trackName) => {
+    try {
+        const stream = await minioClient.getObject(channel, trackName);
+        return stream;
+    } catch (error) {
         throw new Error(`Invalid channel: ${channel}`);
     }
+};
+
+export const getTracks = async (channel) => {
     const tracks = [];
-    const stream = minioClient.listObjects(bucket, '', true);
-    return new Promise((resolve, reject) => {
-        stream.on('data', (obj) => {
-            if (AUDIO_EXTENSIONS.some(ext => obj.name.toLowerCase().endsWith(ext))) {
-                tracks.push(obj.name);
-            }
+    try {
+        const stream = minioClient.listObjects(channel, '', true);
+        return new Promise((resolve, reject) => {
+            stream.on('data', (obj) => {
+                if (AUDIO_EXTENSIONS.some(ext => obj.name.toLowerCase().endsWith(ext))) {
+                    tracks.push(obj.name);
+                }
+            });
+            stream.on('error', reject);
+            stream.on('end', () => resolve(tracks));
         });
-        stream.on('error', reject);
-        stream.on('end', () => resolve(tracks));
-    });
+    } catch (error) {
+        throw new Error(`Invalid channel: ${channel}`);
+    }
 };
 
 export const getTrackUrl = async (channel, trackName) => {
-    const bucket = getBucketByChannel(channel);
-    if (!bucket) {
-        throw new Error(`Invalid channel: ${channel}`);
+    try {
+        return await minioClient.presignedUrl('GET', channel, trackName);
+    } catch (error) {
+        throw new Error(`Invalid track: ${trackName}`);
     }
-    return await minioClient.presignedUrl('GET', bucket, trackName);
 };
