@@ -22,7 +22,7 @@ export const createRadio = async () => {
 
 export const createChannel = async (channelName) => {
     console.log(`Creating MPD file: ${channelName}.mpd…`);
-    const mpdPath = createMpd(channelName);
+    const mpdPath = createChannelMpd(channelName);
 
     let tracksPaths = await getTracklist(channelName);
     tracksPaths = tracksPaths.slice(0, 100); // Limit to 100 tracks
@@ -38,7 +38,7 @@ export const createChannel = async (channelName) => {
         console.log(`Uploading segments to MiniO… (skipped)`);
 
         console.log(`Updating channel MPD…`);
-        const period = await createUnifiedMpdPeriod(tracksPaths[index], index, singleTrackMpdPath);
+        const period = await transformMpdIntoPeriod(index, singleTrackMpdPath);
         addContentToMpd(mpdPath, period);
     }
     // Add mpd footer

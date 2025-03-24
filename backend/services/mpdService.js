@@ -94,7 +94,7 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
     }
 };
 
-export const createMpd = (channel) => {
+export const createChannelMpd = (channel) => {
     const mpdPath = createUnifiedMpdPath(channel);
     const mpdHeader = createUnifiedMpdHeader();
     const directory = path.dirname(mpdPath);
@@ -171,7 +171,7 @@ const createUnifiedMpdPath = (channel) => {
     return mpdPath;
 };
 
-export const createUnifiedMpdPeriod = async (track, index, sourceMpd) => {
+export const transformMpdIntoPeriod = async (index, sourceMpd) => {
     const periodDuration = await extractMediaPresentationDuration(sourceMpd);
     const audioChannelConfiguration = await extractAudioChannelConfiguration(sourceMpd);
     const timescale = await extractTimescale(sourceMpd);
