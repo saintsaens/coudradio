@@ -1,5 +1,5 @@
-import { getTracks } from "../repositories/trackRepository.js";
-import { createUnifiedMPD, createMpd, finalizeMpd, createUnifiedMpdPeriod, addContentToMpd } from "./mpdService.js";
+import { getTrackName } from "./ffprobeService.js";
+import { createMpd, finalizeMpd, createUnifiedMpdPeriod, addContentToMpd } from "./mpdService.js";
 import { encodeTrack } from "./trackEncodingService.js";
 import { getTracklist } from "./tracklistService.js";
 
@@ -25,16 +25,16 @@ export const createChannel = async (channelName) => {
     const mpdPath = createMpd(channelName);
 
     console.log(`Fetching tracks from channel…`);
-    const tracks = await getTracks(channelName);
     let tracksPaths = await getTracklist(channelName);
     tracksPaths = tracksPaths.slice(0, 100); // Limit to 100 tracks
+    const trackNames = await Promise.all(tracksPaths.map(trackPath => getTrackName(trackPath)));
     console.log(`Found ${tracksPaths.length} tracks`);
 
     const channelPath = `./public/${channelName}`;
     for (let index = 0; index < tracksPaths.length; index++) {
 
-        console.log(`Encoding track${index} (${tracks[index]})…`);
         const singleTrackMpdPath = await encodeTrack(index, tracksPaths, channelPath);
+        console.log(`Encoding track${index} (${trackNames[index]})…`);
 
         console.log(`Uploading segments to MiniO… (skipped)`);
 
