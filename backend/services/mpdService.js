@@ -1,6 +1,5 @@
 import fs from 'fs';
 import xml2js from 'xml2js';
-import * as trackEncodingService from './trackEncodingService.js';
 import * as mpdRepository from "../repositories/mpdRepository.js"
 import { encodeTracks } from "./trackEncodingService.js";
 
@@ -94,6 +93,38 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
     }
 };
 
+export const createMpd = (channel) => {
+    const mpdPath = createUnifiedMpdPath(channel);
+    const mpdHeader = createUnifiedMpdHeader();
+    
+    try {
+        fs.writeFileSync(mpdPath, mpdHeader);
+    } catch (error) {
+        throw new Error(`Failed to create MPD file at ${mpdPath}: ${error.message}`);
+    }
+    
+    return mpdPath;
+};
+
+export const addContentToMpd = (mpdPath, content) => {
+    try {
+        fs.appendFileSync(mpdPath, `\n${content}`);
+    } catch (error) {
+        throw new Error(`Failed to update MPD file at ${mpdPath}: ${error.message}`);
+    }
+};
+
+export const finalizeMpd = (mpdPath) => {
+    console.log(`Finalizing MPD…`);
+    const mpdFooter = createUnifiedMpdFooter();
+
+    try {
+        fs.appendFileSync(mpdPath, `\n${mpdFooter}`);
+    } catch (error) {
+        throw new Error(`Failed to finalize MPD file at ${mpdPath}: ${error.message}`);
+    }
+};
+
 export const createUnifiedMPD = async (playlist, channel) => {
     const singleMpdPaths = await encodeTracks(playlist, channel);
 
@@ -137,7 +168,7 @@ const createUnifiedMpdPath = (channel) => {
     return mpdPath;
 };
 
-const createUnifiedMpdPeriod = async (track, index, sourceMpd) => {
+export const createUnifiedMpdPeriod = async (track, index, sourceMpd) => {
     const periodDuration = await extractMediaPresentationDuration(sourceMpd);
     const audioChannelConfiguration = await extractAudioChannelConfiguration(sourceMpd);
     const timescale = await extractTimescale(sourceMpd);
