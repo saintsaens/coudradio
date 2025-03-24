@@ -3,6 +3,7 @@ import { finalizeMpd, addContentToMpd, createChannelMpd, createSegmentsDirectory
 import { deleteSegmentsAndMpd, encodeTrack } from "./trackEncodingService.js";
 import { getTracklist } from "./tracklistService.js";
 import fs from "fs";
+import { uploadTrackSegments } from "./trackService.js";
 
 export const createRadio = async () => {
     console.log("Creating radio…");
@@ -25,7 +26,7 @@ export const createChannel = async (channelName) => {
     const mpdPath = createChannelMpd(channelName);
 
     let tracksPaths = await getTracklist(channelName);
-    tracksPaths = tracksPaths.slice(0, 3);
+    tracksPaths = tracksPaths.slice(0, 100);
     console.log(`Found ${tracksPaths.length} tracks`);
 
     const trackNames = await Promise.all(tracksPaths.map(trackPath => getTrackName(trackPath)));
@@ -40,7 +41,8 @@ export const createChannel = async (channelName) => {
         const period = await transformMpdIntoPeriod(index, singleTrackMpdPath);
         addContentToMpd(mpdPath, period);
 
-        console.log(`Uploading segments to MiniO… (skipped)`);
+        console.log(`Uploading segments to MiniO…`);
+        await uploadTrackSegments(singleTrackMpdPath, channelName);
 
         await deleteSegmentsAndMpd(singleTrackMpdPath);
     }

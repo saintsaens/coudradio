@@ -2,9 +2,9 @@ import fs from "fs";
 import path from "path";
 import { uploadSegment } from "./segmentsService.js";
 
-export const uploadTrackSegments = async (trackPath) => {
+export const uploadTrackSegments = async (trackPath, channel) => {
     const segmentPaths = getTrackSegments(trackPath);
-    await Promise.all(segmentPaths.map(segmentPath => uploadSegment(segmentPath)));
+    await Promise.all(segmentPaths.map(segmentPath => uploadSegment(segmentPath, channel)));
 };
 
 export const getTrackSegments = (trackPath) => {

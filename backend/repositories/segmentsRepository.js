@@ -2,8 +2,8 @@ import { minioClient } from "../db-media/index.js";
 
 const bucket = process.env.MINIO_SEGMENTS_BUCKET;
 
-export const uploadSegment = async (segmentStream, segmentName) => {
-    const objectName = `${process.env.MINIO_COUDRIER_SEGMENTS_PATH}/${segmentName}`;
+export const uploadSegment = async (segmentStream, segmentName, channel) => {
+    const objectName = `${process.env.MINIO_SEGMENTS_PATH}/${channel}/${segmentName}`;
     try {
         await minioClient.putObject(bucket, objectName, segmentStream);
         return objectName;
