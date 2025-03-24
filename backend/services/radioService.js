@@ -24,7 +24,6 @@ export const createChannel = async (channelName) => {
     console.log(`Creating MPD file: ${channelName}.mpd…`);
     const mpdPath = createMpd(channelName);
 
-    console.log(`Fetching tracks from channel…`);
     let tracksPaths = await getTracklist(channelName);
     tracksPaths = tracksPaths.slice(0, 100); // Limit to 100 tracks
     const trackNames = await Promise.all(tracksPaths.map(trackPath => getTrackName(trackPath)));
