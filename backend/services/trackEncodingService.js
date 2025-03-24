@@ -73,3 +73,17 @@ export const encodeTracks = async (playlist, channel) => {
 
     return mpdPaths;
 };
+
+export const deleteSegmentsAndMpd = async (mpdPath) => {
+    console.log(`Deleting all segments and single track mpd locally…`);
+    const directory = path.dirname(mpdPath);
+    const baseName = path.basename(mpdPath, '.mpd');
+    const segmentFiles = fs.readdirSync(directory)
+        .filter(file => file.startsWith(baseName) && (file.endsWith('.m4s') || file.endsWith('_init.mp4') || file.endsWith('.mpd')));
+    for (const file of segmentFiles) {
+        const filePath = path.join(directory, file);
+        if (fs.existsSync(filePath)) {
+            await unlink(filePath);
+        }
+    }
+};

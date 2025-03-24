@@ -95,6 +95,7 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
 };
 
 export const createChannelMpd = (channel) => {
+    console.log(`Creating MPD file: ${channel}.mpd…`);
     const mpdPath = createUnifiedMpdPath(channel);
     const mpdHeader = createUnifiedMpdHeader();
     const directory = path.dirname(mpdPath);
@@ -226,3 +227,11 @@ export const getMpdStream = async (channelName) => {
     const mpdStream = await mpdRepository.getMpd(channelName);
     return mpdStream;
 };
+
+export const createSegmentsDirectory = async (channelName) => {
+    const directory = `./public/${channelName}`;
+    if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+    }
+    return directory;
+}

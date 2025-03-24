@@ -1,7 +1,8 @@
 import { getTrackName } from "./ffprobeService.js";
-import { createMpd, finalizeMpd, createUnifiedMpdPeriod, addContentToMpd } from "./mpdService.js";
-import { encodeTrack } from "./trackEncodingService.js";
+import { finalizeMpd, addContentToMpd, createChannelMpd, createSegmentsDirectory, transformMpdIntoPeriod } from "./mpdService.js";
+import { deleteSegmentsAndMpd, encodeTrack } from "./trackEncodingService.js";
 import { getTracklist } from "./tracklistService.js";
+import fs from "fs";
 
 export const createRadio = async () => {
     console.log("Creating radio…");
@@ -21,36 +22,32 @@ export const createRadio = async () => {
 };
 
 export const createChannel = async (channelName) => {
-    console.log(`Creating MPD file: ${channelName}.mpd…`);
     const mpdPath = createChannelMpd(channelName);
 
     let tracksPaths = await getTracklist(channelName);
-    tracksPaths = tracksPaths.slice(0, 100); // Limit to 100 tracks
-    const trackNames = await Promise.all(tracksPaths.map(trackPath => getTrackName(trackPath)));
+    tracksPaths = tracksPaths.slice(0, 3);
     console.log(`Found ${tracksPaths.length} tracks`);
 
-    const channelPath = `./public/${channelName}`;
+    const trackNames = await Promise.all(tracksPaths.map(trackPath => getTrackName(trackPath)));
+
+    const segmentsDirectory = await createSegmentsDirectory(channelName);
     for (let index = 0; index < tracksPaths.length; index++) {
 
-        const singleTrackMpdPath = await encodeTrack(index, tracksPaths, channelPath);
-        console.log(`Creating segments for track${index} (${trackNames[index]})…`);
-
-        console.log(`Uploading segments to MiniO… (skipped)`);
+        const singleTrackMpdPath = await encodeTrack(index, tracksPaths, segmentsDirectory);
+        console.log(`Creating segments and mpd for track${index} (${trackNames[index]})…`);
 
         console.log(`Updating channel MPD…`);
         const period = await transformMpdIntoPeriod(index, singleTrackMpdPath);
         addContentToMpd(mpdPath, period);
+
+        console.log(`Uploading segments to MiniO… (skipped)`);
+
+        await deleteSegmentsAndMpd(singleTrackMpdPath);
     }
     // Add mpd footer
     finalizeMpd(mpdPath);
-    // Upload mpd
     console.log(`Done: ${process.env.PUBLIC_MPD_PATH}/${channelName}.mpd`);
-
-
-    // const tracklist = await getTracklist(channelName);
-    // const channel = await createUnifiedMPD(tracklist, channelName);
-
-    // return channel;
+    // Upload mpd
 };
 
 export const getChannel = (radio, channelName) => {
