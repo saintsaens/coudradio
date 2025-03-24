@@ -34,7 +34,7 @@ export const createChannel = async (channelName) => {
     for (let index = 0; index < tracksPaths.length; index++) {
 
         const singleTrackMpdPath = await encodeTrack(index, tracksPaths, channelPath);
-        console.log(`Encoding track${index} (${trackNames[index]})…`);
+        console.log(`Creating segments for track${index} (${trackNames[index]})…`);
 
         console.log(`Uploading segments to MiniO… (skipped)`);
 
