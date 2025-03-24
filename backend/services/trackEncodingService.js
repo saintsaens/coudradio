@@ -6,6 +6,7 @@ import util from "util";
 const unlink = util.promisify(fs.unlink);
 
 export const encodeTrack = (index, playlist, channelPath) => {
+    console.log(`Creating segments and mpd for track${index}…`);
     const currentTrack = playlist[index];
     const playlistPath = `${channelPath}/track${index}.mpd`;  // Output MPD file path
 

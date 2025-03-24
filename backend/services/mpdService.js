@@ -172,13 +172,13 @@ const createUnifiedMpdPath = (channel) => {
     return mpdPath;
 };
 
-export const transformMpdIntoPeriod = async (index, sourceMpd) => {
+export const transformMpdIntoPeriod = async (index, sourceMpd, channel) => {
     const periodDuration = await extractMediaPresentationDuration(sourceMpd);
     const audioChannelConfiguration = await extractAudioChannelConfiguration(sourceMpd);
     const timescale = await extractTimescale(sourceMpd);
     const segmentTemplateDuration = await extractSegmentTemplateDuration(sourceMpd);
-    const initSegmentRoute = createInitSegmentRoute(index);
-    const mediaSegmentRoute = createMediaSegmentRoute(index);
+    const initSegmentRoute = createInitSegmentRoute(index, channel);
+    const mediaSegmentRoute = createMediaSegmentRoute(index, channel);
 
     return `
       <Period id="track${index}" duration="${periodDuration}">
@@ -202,12 +202,12 @@ const createUnifiedMpdPeriods = async (tracks, singleMpdPaths) => {
     return mpdPeriods.join('\n');
 };
 
-const createInitSegmentRoute = (trackIndex) => {
-    return `${process.env.BACKEND_URL}/segment/track${trackIndex}_init.mp4`;
+const createInitSegmentRoute = (trackIndex, channel) => {
+    return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_init.mp4`;
 };
 
-const createMediaSegmentRoute = (trackIndex) => {
-    return `${process.env.BACKEND_URL}/segment/track${trackIndex}_$Number$.m4s`;
+const createMediaSegmentRoute = (trackIndex, channel) => {
+    return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_$Number$.m4s`;
 };
 
 export const uploadMpd = async (mpdPath) => {

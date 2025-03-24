@@ -26,23 +26,21 @@ export const createChannel = async (channelName) => {
     const mpdPath = createChannelMpd(channelName);
 
     let tracksPaths = await getTracklist(channelName);
-    tracksPaths = tracksPaths.slice(0, 100);
+    tracksPaths = tracksPaths.slice(0, 3);
     console.log(`Found ${tracksPaths.length} tracks`);
-
-    const trackNames = await Promise.all(tracksPaths.map(trackPath => getTrackName(trackPath)));
+    console.log(`Using backend URL: ${process.env.BACKEND_URL}`);
 
     const segmentsDirectory = await createSegmentsDirectory(channelName);
     for (let index = 0; index < tracksPaths.length; index++) {
 
         const singleTrackMpdPath = await encodeTrack(index, tracksPaths, segmentsDirectory);
-        console.log(`Creating segments and mpd for track${index} (${trackNames[index]})…`);
 
         console.log(`Updating channel MPD…`);
-        const period = await transformMpdIntoPeriod(index, singleTrackMpdPath);
+        const period = await transformMpdIntoPeriod(index, singleTrackMpdPath, channelName);
         addContentToMpd(mpdPath, period);
 
         console.log(`Uploading segments to MiniO…`);
-        await uploadTrackSegments(singleTrackMpdPath, channelName);
+        // await uploadTrackSegments(singleTrackMpdPath, channelName);
 
         await deleteSegmentsAndMpd(singleTrackMpdPath);
     }
