@@ -26,7 +26,6 @@ export const createChannel = async (channelName) => {
     const mpdPath = createChannelMpd(channelName);
 
     let tracksPaths = await getTracklist(channelName);
-    tracksPaths = tracksPaths.slice(0, 3);
     console.log(`Found ${tracksPaths.length} tracks`);
     console.log(`Using backend URL: ${process.env.BACKEND_URL}`);
 
