@@ -1,9 +1,13 @@
-import * as radioService from '../services/radioService.js';
 import * as mpdService from "../services/mpdService.js"
 
-export const getLofiStream = async (req, res) => {
+export const getStream = async (req, res) => {
     try {
-        const channelName = `${process.env.LOFI_CHANNEL_NAME}`;
+        const { channel } = req.params;
+        const channelName = channel;
+
+        if (!channelName) {
+            return res.status(400).send('Invalid channel');
+        }
 
         const channelStream = await mpdService.getMpdStream(channelName);
 
@@ -11,30 +15,11 @@ export const getLofiStream = async (req, res) => {
 
         channelStream.pipe(res);
         channelStream.on('error', (err) => {
-            console.error('Error streaming file:', err.message);
+            console.error(`Error streaming ${channel} file:`, err.message);
             res.status(500).send('Error streaming mpd file');
         });
     } catch (error) {
-        console.error('Error retrieving lofi stream:', error.message);
-        res.status(500).send('Lofi stream not available');
-    }
-};
-
-export const getCoudrierStream = async (req, res) => {
-    try {
-        const channelName = `${process.env.COUDRIER_CHANNEL_NAME}`;
-
-        const channelStream = await mpdService.getMpdStream(channelName);
-
-        res.setHeader('Content-Type', 'application/dash+xml');
-
-        channelStream.pipe(res);
-        channelStream.on('error', (err) => {
-            console.error('Error streaming file:', err.message);
-            res.status(500).send('Error streaming mpd file');
-        });
-    } catch (error) {
-        console.error('Error retrieving coudrier stream:', error.message);
-        res.status(500).send('Coudrier stream not available');
+        console.error(`Error retrieving ${req.params.channel} stream:`, error.message);
+        res.status(500).send(`${req.params.channel} stream not available`);
     }
 };
