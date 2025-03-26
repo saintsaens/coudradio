@@ -10,7 +10,7 @@ const Title = ({ channelName }) => {
             <Typography
                 variant="h4"
             >
-                {channelName}
+                {channelName.replace(/-/g, " ")}
             </Typography>
         )
     );
