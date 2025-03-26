@@ -11,16 +11,6 @@ export const extractMediaPresentationDuration = async (mpdPath) => {
     return duration;
 }
 
-export const transformMediaPresentationDurationIntoSeconds = (duration) => {
-    const durationRegex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
-    const matches = duration.match(durationRegex);
-    const hours = parseInt(matches[1]) || 0;
-    const minutes = parseInt(matches[2]) || 0;
-    const seconds = parseInt(matches[3]) || 0;
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-    return totalSeconds;
-}
-
 export const extractTimescale = async (mpdPath) => {
     const data = fs.readFileSync(mpdPath, 'utf8');
     const options = {
