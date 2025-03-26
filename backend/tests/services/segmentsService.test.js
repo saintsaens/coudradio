@@ -22,13 +22,14 @@ describe("uploadSegment", () => {
         fs.createReadStream.mockReturnValue(mockSegmentStream); // Mock stream creation
         segmentsRepository.uploadSegment.mockResolvedValue(mockUploadedSegmentName); // Mock repository call
 
-        const result = await uploadSegment(mockSegmentPath);
+        const result = await uploadSegment(mockSegmentPath, "lofi");
 
         expect(fs.existsSync).toHaveBeenCalledWith(mockSegmentPath);
         expect(fs.createReadStream).toHaveBeenCalledWith(mockSegmentPath);
         expect(segmentsRepository.uploadSegment).toHaveBeenCalledWith(
             mockSegmentStream,
-            mockSegmentName
+            mockSegmentName,
+            "lofi"
         );
         expect(result).toBe(mockUploadedSegmentName);
     });
@@ -51,13 +52,14 @@ describe("uploadSegment", () => {
         const mockError = new Error("Repository error");
         segmentsRepository.uploadSegment.mockRejectedValue(mockError); // Mock repository error
 
-        await expect(uploadSegment(mockSegmentPath)).rejects.toThrow(mockError);
+        await expect(uploadSegment(mockSegmentPath, "lofi")).rejects.toThrow(mockError);
 
         expect(fs.existsSync).toHaveBeenCalledWith(mockSegmentPath);
         expect(fs.createReadStream).toHaveBeenCalledWith(mockSegmentPath);
         expect(segmentsRepository.uploadSegment).toHaveBeenCalledWith(
             mockSegmentStream,
-            mockSegmentName
+            mockSegmentName,
+            "lofi"
         );
     });
 });
