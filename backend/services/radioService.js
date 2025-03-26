@@ -39,7 +39,7 @@ export const createChannel = async (channelName) => {
         addContentToMpd(mpdPath, period);
 
         console.log(`Uploading segments to MiniO…`);
-        // await uploadTrackSegments(singleTrackMpdPath, channelName);
+        await uploadTrackSegments(singleTrackMpdPath, channelName);
 
         await deleteSegmentsAndMpd(singleTrackMpdPath);
     }
