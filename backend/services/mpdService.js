@@ -1,6 +1,6 @@
 import fs from 'fs';
+import path from 'path';
 import xml2js from 'xml2js';
-import * as trackEncodingService from './trackEncodingService.js';
 import * as mpdRepository from "../repositories/mpdRepository.js"
 import { encodeTracks } from "./trackEncodingService.js";
 
@@ -94,6 +94,43 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
     }
 };
 
+export const createChannelMpd = (channel) => {
+    console.log(`Creating MPD file: ${channel}.mpd…`);
+    const mpdPath = createUnifiedMpdPath(channel);
+    const mpdHeader = createUnifiedMpdHeader();
+    const directory = path.dirname(mpdPath);
+    try {
+        if (!fs.existsSync(directory)) {
+            fs.mkdirSync(directory, { recursive: true });
+        }
+        fs.writeFileSync(mpdPath, mpdHeader);
+        return mpdPath;
+    } catch (error) {
+        throw new Error(`Failed to create MPD file at ${mpdPath}: ${error.message}`);
+    }
+};
+
+export const addContentToMpd = (mpdPath, content) => {
+    try {
+        fs.appendFileSync(mpdPath, `\n${content}`);
+    } catch (error) {
+        throw new Error(`Failed to update MPD file at ${mpdPath}: ${error.message}`);
+    }
+};
+
+export const finalizeMpd = async (mpdPath) => {
+    console.log(`Finalizing MPD…`);
+    try {
+        const mpdFooter = createUnifiedMpdFooter();
+        fs.appendFileSync(mpdPath, `\n${mpdFooter}`);
+
+        const totalDuration = await getTotalPeriodsDurations(mpdPath);
+        addMediaPresentationDuration(mpdPath, totalDuration);
+    } catch (error) {
+        throw new Error(`Failed to finalize MPD file at ${mpdPath}: ${error.message}`);
+    }
+};
+
 export const createUnifiedMPD = async (playlist, channel) => {
     const singleMpdPaths = await encodeTracks(playlist, channel);
 
@@ -137,13 +174,13 @@ const createUnifiedMpdPath = (channel) => {
     return mpdPath;
 };
 
-const createUnifiedMpdPeriod = async (track, index, sourceMpd) => {
+export const transformMpdIntoPeriod = async (index, sourceMpd, channel) => {
     const periodDuration = await extractMediaPresentationDuration(sourceMpd);
     const audioChannelConfiguration = await extractAudioChannelConfiguration(sourceMpd);
     const timescale = await extractTimescale(sourceMpd);
     const segmentTemplateDuration = await extractSegmentTemplateDuration(sourceMpd);
-    const initSegmentRoute = createInitSegmentRoute(index);
-    const mediaSegmentRoute = createMediaSegmentRoute(index);
+    const initSegmentRoute = createInitSegmentRoute(index, channel);
+    const mediaSegmentRoute = createMediaSegmentRoute(index, channel);
 
     return `
       <Period id="track${index}" duration="${periodDuration}">
@@ -167,12 +204,12 @@ const createUnifiedMpdPeriods = async (tracks, singleMpdPaths) => {
     return mpdPeriods.join('\n');
 };
 
-const createInitSegmentRoute = (trackIndex) => {
-    return `${process.env.BACKEND_URL}/segment/track${trackIndex}_init.mp4`;
+const createInitSegmentRoute = (trackIndex, channel) => {
+    return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_init.mp4`;
 };
 
-const createMediaSegmentRoute = (trackIndex) => {
-    return `${process.env.BACKEND_URL}/segment/track${trackIndex}_$Number$.m4s`;
+const createMediaSegmentRoute = (trackIndex, channel) => {
+    return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_$Number$.m4s`;
 };
 
 export const uploadMpd = async (mpdPath) => {
@@ -191,4 +228,80 @@ export const uploadMpd = async (mpdPath) => {
 export const getMpdStream = async (channelName) => {
     const mpdStream = await mpdRepository.getMpd(channelName);
     return mpdStream;
+};
+
+export const createSegmentsDirectory = async (channelName) => {
+    const directory = `./public/${channelName}`;
+    if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+    }
+    return directory;
+}
+
+export const getTotalPeriodsDurations = async (mpdPath) => {
+    const data = fs.readFileSync(mpdPath, 'utf8');
+    const options = {
+        explicitArray: false,
+        mergeAttrs: true,
+    };
+    try {
+        const result = await xml2js.parseStringPromise(data, options);
+        // Extract all Period durations from the MPD content
+        const periods = Array.isArray(result.MPD.Period) ? result.MPD.Period : [result.MPD.Period];
+        let totalSeconds = 0;
+
+        // Convert ISO 8601 durations (e.g., PT1H2M53.1S) to total seconds
+        periods.forEach((period) => {
+            const duration = period.duration;
+            totalSeconds += iso8601DurationToSeconds(duration);
+        });
+
+        // Convert total seconds back to ISO 8601 duration format
+        return secondsToIso8601Duration(totalSeconds);
+    } catch (error) {
+        console.error('Error parsing XML:', error.message);
+        throw error;
+    }
+};
+
+// Helper function to convert ISO 8601 duration string to total seconds
+const iso8601DurationToSeconds = (duration) => {
+    const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(\d+(?:\.\d+)?)S/;
+    const match = duration.match(regex);
+    let hours = 0, minutes = 0, seconds = 0;
+    if (match) {
+        if (match[1]) hours = parseInt(match[1], 10) * 3600; // Convert hours to seconds
+        if (match[2]) minutes = parseInt(match[2], 10) * 60; // Convert minutes to seconds
+        if (match[3]) seconds = parseFloat(match[3]); // Parse seconds (including fractional part)
+
+        return hours + minutes + seconds;
+    }
+    return 0;
+};
+
+// Helper function to convert total seconds back to ISO 8601 duration format
+const secondsToIso8601Duration = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = (totalSeconds % 60).toFixed(1);
+    return `PT${hours}H${minutes}M${seconds}S`;
+};
+
+export const addMediaPresentationDuration = async (mpdPath, mediaPresentationDuration) => {
+    // Read the MPD content from the file
+    const mpdContent = fs.readFileSync(mpdPath, 'utf-8');
+
+    // Replace type="static"> with type="static" mediaPresentationDuration="...">
+    const updatedMpdContent = mpdContent.replace(
+        /type="static">/,
+        `type="static"
+        mediaPresentationDuration="${mediaPresentationDuration}">`
+    );
+
+    // Write the updated MPD content back to the file
+    fs.writeFileSync(mpdPath, updatedMpdContent, 'utf-8');
+
+    // Return the updated MPD content
+    return updatedMpdContent;
 };

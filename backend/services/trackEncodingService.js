@@ -1,15 +1,13 @@
-import fs from 'fs';
-import path from 'path';
-import util from 'util';
 import ffmpeg from 'fluent-ffmpeg';
-import { uploadTrackSegments } from './trackService.js';
-import { getTracklist } from "./tracklistService.js";
+import path from "path";
+import fs from "fs";
+import util from "util";
 
 const unlink = util.promisify(fs.unlink);
 
 export const encodeTrack = (index, playlist, channelPath) => {
+    console.log(`Creating segments and mpd for track${index}…`);
     const currentTrack = playlist[index];
-    console.log(`Encoding track${index}…`);
     const playlistPath = `${channelPath}/track${index}.mpd`;  // Output MPD file path
 
     return new Promise((resolve, reject) => {
@@ -39,12 +37,17 @@ export const encodeTrack = (index, playlist, channelPath) => {
 
 export const encodeTracks = async (playlist, channel) => {
     const channelPath = `./public/${channel}`;
+    if (!fs.existsSync(channelPath)) {
+        fs.mkdirSync(channelPath, { recursive: true });
+    }
     const mpdPaths = [];
 
     for (let index = 0; index < playlist.length; index++) {
         // Encode the track
-        const mpdPath = await encodeTrack(index, playlist, channelPath);
+        console.log(`Encoding track${index}…`);
+        const singleTrackMpdPath = await encodeTrack(index, playlist, channelPath);
 
+        console.log(`Uploading segments to MiniO… (skipped)`);
         // Upload the track segments
         // console.log(`Uploading segments for track${index}`);
         // await uploadTrackSegments(mpdPath);
@@ -54,7 +57,6 @@ export const encodeTracks = async (playlist, channel) => {
         // const baseName = path.basename(mpdPath, '.mpd');
         // const segmentFiles = fs.readdirSync(directory)
         //     .filter(file => file.startsWith(baseName) && (file.endsWith('.m4s') || file.endsWith('_init.mp4')));
-
         // for (const file of segmentFiles) {
         //     const filePath = path.join(directory, file);
         //     if (fs.existsSync(filePath)) {
@@ -62,9 +64,27 @@ export const encodeTracks = async (playlist, channel) => {
         //     }
         // }
 
+        // console.log(`Updating channel MPD…`);
+        // const period = createUnifiedMPDPeriod(playlist[index], index, singleTrackMpdPath);
+
+
         // Store the MPD path
-        mpdPaths.push(mpdPath);
+        mpdPaths.push(singleTrackMpdPath);
     }
 
     return mpdPaths;
+};
+
+export const deleteSegmentsAndMpd = async (mpdPath) => {
+    console.log(`Deleting all segments and single track mpd locally…`);
+    const directory = path.dirname(mpdPath);
+    const baseName = path.basename(mpdPath, '.mpd');
+    const segmentFiles = fs.readdirSync(directory)
+        .filter(file => file.startsWith(baseName) && (file.endsWith('.m4s') || file.endsWith('_init.mp4') || file.endsWith('.mpd')));
+    for (const file of segmentFiles) {
+        const filePath = path.join(directory, file);
+        if (fs.existsSync(filePath)) {
+            await unlink(filePath);
+        }
+    }
 };
