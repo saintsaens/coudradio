@@ -43,10 +43,10 @@ export const createChannel = async (channelName) => {
 
         await deleteSegmentsAndMpd(singleTrackMpdPath);
     }
-    // Add mpd footer
-    finalizeMpd(mpdPath);
+    await finalizeMpd(mpdPath);
     console.log(`Done: ${process.env.PUBLIC_MPD_PATH}/${channelName}.mpd`);
     // Upload mpd
+
 };
 
 export const getChannel = (radio, channelName) => {

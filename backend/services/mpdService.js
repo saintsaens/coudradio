@@ -11,6 +11,16 @@ export const extractMediaPresentationDuration = async (mpdPath) => {
     return duration;
 }
 
+export const transformMediaPresentationDurationIntoSeconds = (duration) => {
+    const durationRegex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+    const matches = duration.match(durationRegex);
+    const hours = parseInt(matches[1]) || 0;
+    const minutes = parseInt(matches[2]) || 0;
+    const seconds = parseInt(matches[3]) || 0;
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+    return totalSeconds;
+}
+
 export const extractTimescale = async (mpdPath) => {
     const data = fs.readFileSync(mpdPath, 'utf8');
     const options = {
@@ -118,12 +128,14 @@ export const addContentToMpd = (mpdPath, content) => {
     }
 };
 
-export const finalizeMpd = (mpdPath) => {
+export const finalizeMpd = async (mpdPath) => {
     console.log(`Finalizing MPD…`);
-    const mpdFooter = createUnifiedMpdFooter();
-
     try {
+        const mpdFooter = createUnifiedMpdFooter();
         fs.appendFileSync(mpdPath, `\n${mpdFooter}`);
+
+        const totalDuration = await getTotalPeriodsDurations(mpdPath);
+        addMediaPresentationDuration(mpdPath, totalDuration);
     } catch (error) {
         throw new Error(`Failed to finalize MPD file at ${mpdPath}: ${error.message}`);
     }
@@ -235,3 +247,71 @@ export const createSegmentsDirectory = async (channelName) => {
     }
     return directory;
 }
+
+export const getTotalPeriodsDurations = async (mpdPath) => {
+    const data = fs.readFileSync(mpdPath, 'utf8');
+    const options = {
+        explicitArray: false,
+        mergeAttrs: true,
+    };
+    try {
+        const result = await xml2js.parseStringPromise(data, options);
+        // Extract all Period durations from the MPD content
+        const periods = Array.isArray(result.MPD.Period) ? result.MPD.Period : [result.MPD.Period];
+        let totalSeconds = 0;
+
+        // Convert ISO 8601 durations (e.g., PT1H2M53.1S) to total seconds
+        periods.forEach((period) => {
+            const duration = period.duration;
+            totalSeconds += iso8601DurationToSeconds(duration);
+        });
+
+        // Convert total seconds back to ISO 8601 duration format
+        return secondsToIso8601Duration(totalSeconds);
+    } catch (error) {
+        console.error('Error parsing XML:', error.message);
+        throw error;
+    }
+};
+
+// Helper function to convert ISO 8601 duration string to total seconds
+const iso8601DurationToSeconds = (duration) => {
+    const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(\d+(?:\.\d+)?)S/;
+    const match = duration.match(regex);
+    let hours = 0, minutes = 0, seconds = 0;
+    if (match) {
+        if (match[1]) hours = parseInt(match[1], 10) * 3600; // Convert hours to seconds
+        if (match[2]) minutes = parseInt(match[2], 10) * 60; // Convert minutes to seconds
+        if (match[3]) seconds = parseFloat(match[3]); // Parse seconds (including fractional part)
+
+        return hours + minutes + seconds;
+    }
+    return 0;
+};
+
+// Helper function to convert total seconds back to ISO 8601 duration format
+const secondsToIso8601Duration = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = (totalSeconds % 60).toFixed(1);
+    return `PT${hours}H${minutes}M${seconds}S`;
+};
+
+export const addMediaPresentationDuration = async (mpdPath, mediaPresentationDuration) => {
+    // Read the MPD content from the file
+    const mpdContent = fs.readFileSync(mpdPath, 'utf-8');
+
+    // Replace type="static"> with type="static" mediaPresentationDuration="...">
+    const updatedMpdContent = mpdContent.replace(
+        /type="static">/,
+        `type="static"
+        mediaPresentationDuration="${mediaPresentationDuration}">`
+    );
+
+    // Write the updated MPD content back to the file
+    fs.writeFileSync(mpdPath, updatedMpdContent, 'utf-8');
+
+    // Return the updated MPD content
+    return updatedMpdContent;
+};
