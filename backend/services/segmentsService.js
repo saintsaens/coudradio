@@ -7,10 +7,8 @@ export const uploadSegment = async (segmentPath, channel) => {
         throw new Error(`File not found at path: ${segmentPath}`);
     }
 
-    const segmentStream = fs.createReadStream(segmentPath);
     const segmentName = path.basename(segmentPath);
-
-    const uploadedSegmentName = await segmentsRepository.uploadSegment(segmentStream, segmentName, channel);
+    const uploadedSegmentName = await segmentsRepository.uploadSegment(segmentPath, segmentName, channel);
 
     return uploadedSegmentName;
 };
