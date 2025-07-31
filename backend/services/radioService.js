@@ -1,25 +1,8 @@
-import { getTrackName } from "./ffprobeService.js";
 import { finalizeMpd, addContentToMpd, createChannelMpd, createSegmentsDirectory, transformMpdIntoPeriod } from "./mpdService.js";
 import { deleteSegmentsAndMpd, encodeTrack } from "./trackEncodingService.js";
 import { getTracklist } from "./tracklistService.js";
-import fs from "fs";
 import { uploadTrackSegments } from "./trackService.js";
 
-export const createRadio = async () => {
-    console.log("Creating radio…");
-    // console.log("Creating lofi channel…");
-    // const lofiChannel = await createChannel(process.env.LOFI_CHANNEL_NAME);
-    // console.log(`Lofi MPD available: ${lofiChannel}`);
-    console.log("Creating coudrier channel…");
-    const coudrierChannel = await createChannel(process.env.COUDRIER_CHANNEL_NAME);
-    console.log(`Coudrier MPD available: ${coudrierChannel}`);
-
-    const radio = {
-        // lofi: lofiChannel,
-        coudrier: coudrierChannel
-    };
-
-    return radio;
 };
 
 export const createChannel = async (channelName) => {
