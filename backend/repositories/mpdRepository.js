@@ -19,6 +19,7 @@ export const getMpd = async (channelName) => {
         const dataStream = await minioClient.getObject(bucket, mpdPath);
         return dataStream; // This returns the readable stream of the segment
     } catch (error) {
-        throw new Error(`Failed to retrieve mpd: ${error.message}`);
+        console.error('MinIO error:', error);
+        throw new Error(`Failed to retrieve mpd`);
     }
 };
