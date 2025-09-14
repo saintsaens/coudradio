@@ -6,17 +6,13 @@ import { Modal, Box, List, ListItem, ListItemButton, ListItemText, InputBase } f
 
 const ChannelSwitcher = () => {
     const { currentChannel, selectedIndex, isSwitcherOpen } = useSelector((state) => state.channelSwitcher);
-    const { username } = useSelector((state) => state.user);
+    const { channelList } = useSelector((state) => state.user);
     const [searchQuery, setSearchQuery] = useState('');
-
-    const listItems = (username
-        ? import.meta.env.VITE_CHANNELS_LOGGEDIN
-        : import.meta.env.VITE_CHANNELS_DEFAULT
-        || ''
-    ).split(',');
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
+
+    const listItems = channelList;
 
     const processedItems = [...listItems]
         .sort((a, b) => a.localeCompare(b))
