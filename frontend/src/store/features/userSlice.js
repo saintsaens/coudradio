@@ -84,7 +84,7 @@ const userSlice = createSlice({
                 const raw = state.username
                     ? import.meta.env.VITE_CHANNELS_LOGGEDIN
                     : import.meta.env.VITE_CHANNELS_DEFAULT || '';
-                state.channelList = raw.split(',').map(item => item.replace(/-/g, ' '));
+                state.channelList = raw.split(',');
             })
             .addCase(fetchUser.rejected, (state, action) => {
                 state.status = 'failed';
@@ -92,7 +92,7 @@ const userSlice = createSlice({
 
                 // Fallback channelList when fetch fails
                 const raw = import.meta.env.VITE_CHANNELS_DEFAULT || '';
-                state.channelList = raw.split(',').map(item => item.replace(/-/g, ' '));
+                state.channelList = raw.split(',');
             });
     },
 });
