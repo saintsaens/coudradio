@@ -1,4 +1,4 @@
-import { finalizeMpd, addContentToMpd, createLocalMpd, createLocalSegmentsDirectory, transformMpdIntoPeriod } from "./mpdService.js";
+import { finalizeMpd, addContentToMpd, createLocalMpd, createLocalSegmentsDirectory, transformMpdIntoPeriod, uploadMpd } from "./mpdService.js";
 import { deleteSegmentsAndMpd, encodeTrack } from "./trackEncodingService.js";
 import { getTracklist } from "./tracklistService.js";
 import fs from 'fs/promises';
@@ -63,7 +63,10 @@ export const createChannel = async (channelName) => {
 
     await finalizeMpd(mpdPath);
     console.log(`Done: ${mpdPath}`);
+    await uploadMpd(mpdPath, channelName);
+    console.log(`Uploaded MPD to MiniO for channel ${channelName}`);
 
+    // Clean up progress file
     await fs.rm(getProgressFilePath(channelName), { force: true });
 };
 

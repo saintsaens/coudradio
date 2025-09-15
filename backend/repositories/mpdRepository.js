@@ -2,8 +2,8 @@ import { minioClient } from "../db-media/index.js";
 
 const bucket = process.env.MINIO_MPD_BUCKET;
 
-export const uploadMpd = async (mpdStream, mpdName) => {
-    const objectName = `${process.env.MINIO_LOFI_MPD_PATH}/${mpdName}`;
+export const uploadMpd = async (mpdStream, mpdName, channel) => {
+    const objectName = `${channel}/${mpdName}`;
     try {
         await minioClient.putObject(bucket, objectName, mpdStream);
         return objectName;

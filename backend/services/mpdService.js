@@ -212,7 +212,7 @@ const createMediaSegmentRoute = (trackIndex, channel) => {
     return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_$Number$.m4s`;
 };
 
-export const uploadMpd = async (mpdPath) => {
+export const uploadMpd = async (mpdPath, channel) => {
     if (!fs.existsSync(mpdPath)) {
         throw new Error(`File not found at path: ${mpdPath}`);
     }
@@ -220,7 +220,7 @@ export const uploadMpd = async (mpdPath) => {
     const mpdStream = fs.createReadStream(mpdPath);
     const mpdName = path.basename(mpdPath);
 
-    const uploadedMpdName = await mpdRepository.uploadMpd(mpdStream, mpdName);
+    const uploadedMpdName = await mpdRepository.uploadMpd(mpdStream, mpdName, channel);
 
     return uploadedMpdName;
 };
