@@ -7,6 +7,7 @@ import ChannelContainer from "../ChannelContainer";
 
 const WebMuteToggler = ({ audioRef, channelName }) => {
   const isMuted = useSelector((state) => state.audioPlayer.isMuted);
+  const isSwitcherOpen = useSelector((state) => state.channelSwitcher.isSwitcherOpen);
   const dispatch = useDispatch();
 
   const handleToggleMute = () => {
@@ -19,7 +20,7 @@ const WebMuteToggler = ({ audioRef, channelName }) => {
 
   useEffect(() => {
     const handleKeyPress = (event) => {
-      if (!(event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if (!isSwitcherOpen && !(event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         handleToggleMute();
       }
     };
@@ -28,7 +29,7 @@ const WebMuteToggler = ({ audioRef, channelName }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [audioRef]);
+  }, [audioRef, isSwitcherOpen]);
 
   return (
     <>
