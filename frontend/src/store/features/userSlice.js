@@ -6,7 +6,7 @@ export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
     const response = await fetch(`${baseUrl}/auth/user/profile`, {
         credentials: 'include'
     });
-    
+
     if (response.ok) {
         const data = await response.json();
         return ({
@@ -60,6 +60,7 @@ const userSlice = createSlice({
         timeSpent: 0,
         isSubscriber: false,
         email: '',
+        channelList: [],
         status: 'idle',
         error: null
     },
@@ -78,10 +79,20 @@ const userSlice = createSlice({
                 state.timeSpent = action.payload.timeSpent;
                 state.isSubscriber = action.payload.isSubscriber;
                 state.email = action.payload.email;
+
+                // Derive channelList directly from username
+                const raw = state.username
+                    ? import.meta.env.VITE_CHANNELS_LOGGEDIN
+                    : import.meta.env.VITE_CHANNELS_DEFAULT || '';
+                state.channelList = raw.split(',');
             })
             .addCase(fetchUser.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.error.message;
+
+                // Fallback channelList when fetch fails
+                const raw = import.meta.env.VITE_CHANNELS_DEFAULT || '';
+                state.channelList = raw.split(',');
             });
     },
 });

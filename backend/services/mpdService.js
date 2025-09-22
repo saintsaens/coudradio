@@ -94,8 +94,8 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
     }
 };
 
-export const createChannelMpd = (channel) => {
-    console.log(`Creating MPD file: ${channel}.mpd…`);
+export const createLocalMpd = (channel) => {
+    console.log(`Creating local MPD file: ${channel}.mpd…`);
     const mpdPath = createUnifiedMpdPath(channel);
     const mpdHeader = createUnifiedMpdHeader();
     const directory = path.dirname(mpdPath);
@@ -106,7 +106,7 @@ export const createChannelMpd = (channel) => {
         fs.writeFileSync(mpdPath, mpdHeader);
         return mpdPath;
     } catch (error) {
-        throw new Error(`Failed to create MPD file at ${mpdPath}: ${error.message}`);
+        throw new Error(`Failed to create local MPD file at ${mpdPath}: ${error.message}`);
     }
 };
 
@@ -212,7 +212,7 @@ const createMediaSegmentRoute = (trackIndex, channel) => {
     return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_$Number$.m4s`;
 };
 
-export const uploadMpd = async (mpdPath) => {
+export const uploadMpd = async (mpdPath, channel) => {
     if (!fs.existsSync(mpdPath)) {
         throw new Error(`File not found at path: ${mpdPath}`);
     }
@@ -220,7 +220,7 @@ export const uploadMpd = async (mpdPath) => {
     const mpdStream = fs.createReadStream(mpdPath);
     const mpdName = path.basename(mpdPath);
 
-    const uploadedMpdName = await mpdRepository.uploadMpd(mpdStream, mpdName);
+    const uploadedMpdName = await mpdRepository.uploadMpd(mpdStream, mpdName, channel);
 
     return uploadedMpdName;
 };
@@ -230,7 +230,7 @@ export const getMpdStream = async (channelName) => {
     return mpdStream;
 };
 
-export const createSegmentsDirectory = async (channelName) => {
+export const createLocalSegmentsDirectory = async (channelName) => {
     const directory = `./public/${channelName}`;
     if (!fs.existsSync(directory)) {
         fs.mkdirSync(directory, { recursive: true });

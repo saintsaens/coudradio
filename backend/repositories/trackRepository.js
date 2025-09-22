@@ -1,6 +1,6 @@
 import { minioClient } from "../db-media/index.js";
 
-const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
+const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.m4v', '.flac', '.mkv'];
 
 export const getTrack = async (channel, trackName) => {
     try {
@@ -17,7 +17,7 @@ export const getTracks = async (channel) => {
         const stream = minioClient.listObjects(channel, '', true);
         return new Promise((resolve, reject) => {
             stream.on('data', (obj) => {
-                if (AUDIO_EXTENSIONS.some(ext => obj.name.toLowerCase().endsWith(ext))) {
+                if (ALLOWED_EXTENSIONS.some(ext => obj.name.toLowerCase().endsWith(ext))) {
                     tracks.push(obj.name);
                 }
             });

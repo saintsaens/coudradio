@@ -1,53 +1,75 @@
-import { getTrackName } from "./ffprobeService.js";
-import { finalizeMpd, addContentToMpd, createChannelMpd, createSegmentsDirectory, transformMpdIntoPeriod } from "./mpdService.js";
+import { finalizeMpd, addContentToMpd, createLocalMpd, createLocalSegmentsDirectory, transformMpdIntoPeriod, uploadMpd } from "./mpdService.js";
 import { deleteSegmentsAndMpd, encodeTrack } from "./trackEncodingService.js";
 import { getTracklist } from "./tracklistService.js";
-import fs from "fs";
+import fs from 'fs/promises';
+import path from 'path';
 import { uploadTrackSegments } from "./trackService.js";
 
-export const createRadio = async () => {
-    console.log("Creating radio…");
-    // console.log("Creating lofi channel…");
-    // const lofiChannel = await createChannel(process.env.LOFI_CHANNEL_NAME);
-    // console.log(`Lofi MPD available: ${lofiChannel}`);
-    console.log("Creating coudrier channel…");
-    const coudrierChannel = await createChannel(process.env.COUDRIER_CHANNEL_NAME);
-    console.log(`Coudrier MPD available: ${coudrierChannel}`);
 
-    const radio = {
-        // lofi: lofiChannel,
-        coudrier: coudrierChannel
-    };
+const getProgressFilePath = (channelName) =>
+    path.join('progress', `${channelName}.json`);
 
-    return radio;
+const getMpdFilePath = (channelName) =>
+    path.join(process.env.PUBLIC_MPD_PATH, `${channelName}.mpd`);
+
+const loadProgress = async (channelName) => {
+    try {
+        const filePath = getProgressFilePath(channelName);
+        const data = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(data).lastIndex ?? -1;
+    } catch {
+        return -1;
+    }
+};
+
+const saveProgress = async (channelName, index) => {
+    const filePath = getProgressFilePath(channelName);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify({ lastIndex: index }), 'utf-8');
 };
 
 export const createChannel = async (channelName) => {
-    const mpdPath = createChannelMpd(channelName);
+    const mpdPath = getMpdFilePath(channelName);
 
-    let tracksPaths = await getTracklist(channelName);
+    try {
+        await fs.access(mpdPath);
+        console.log(`MPD already exists at ${mpdPath}`);
+    } catch {
+        console.log(`Creating new MPD for ${channelName}...`);
+        createLocalMpd(channelName);
+    }
+
+    const tracksPaths = await getTracklist(channelName);
     console.log(`Found ${tracksPaths.length} tracks`);
     console.log(`Using backend URL: ${process.env.BACKEND_URL}`);
 
-    const segmentsDirectory = await createSegmentsDirectory(channelName);
-    for (let index = 0; index < tracksPaths.length; index++) {
+    const segmentsDirectory = await createLocalSegmentsDirectory(channelName);
+    const lastProcessedIndex = await loadProgress(channelName);
 
+    for (let index = lastProcessedIndex + 1; index < tracksPaths.length; index++) {
         const singleTrackMpdPath = await encodeTrack(index, tracksPaths, segmentsDirectory);
 
-        console.log(`Updating channel MPD…`);
+        console.log(`Uploading segments to MiniO for track ${index + 1}...`);
+        await uploadTrackSegments(singleTrackMpdPath, channelName);
+
+        await saveProgress(channelName, index);
+
+        console.log(`Updating local channel MPD for track ${index + 1}...`);
         const period = await transformMpdIntoPeriod(index, singleTrackMpdPath, channelName);
         addContentToMpd(mpdPath, period);
 
-        console.log(`Uploading segments to MiniO…`);
-        await uploadTrackSegments(singleTrackMpdPath, channelName);
-
         await deleteSegmentsAndMpd(singleTrackMpdPath);
     }
-    await finalizeMpd(mpdPath);
-    console.log(`Done: ${process.env.PUBLIC_MPD_PATH}/${channelName}.mpd`);
-    // Upload mpd
 
+    await finalizeMpd(mpdPath);
+    console.log(`Done: ${mpdPath}`);
+    await uploadMpd(mpdPath, channelName);
+    console.log(`Uploaded MPD to MiniO for channel ${channelName}`);
+
+    // Clean up progress file
+    await fs.rm(getProgressFilePath(channelName), { force: true });
 };
+
 
 export const getChannel = (radio, channelName) => {
     if (!radio[channelName]) {

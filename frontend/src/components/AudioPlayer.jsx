@@ -8,7 +8,14 @@ import Background from "./Background.jsx";
 const AudioPlayer = ({ audioRef, channelName }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const src = `${backendUrl}/${channelName}`;
-  const playlistDuration = useSelector((state) => state.audioPlayer.playlistDuration);
+
+  const channels = JSON.parse(import.meta.env.VITE_CHANNELS || "[]");
+  const channel = channels.find((c) => c.name === channelName);
+  if (!channel) {
+    console.error(`Channel "${channelName}" not found`);
+  }
+  const playlistDuration = channel?.duration || 0;
+
   const dispatch = useDispatch();
   let player = null; // Keep track of the Dash.js player instance
 

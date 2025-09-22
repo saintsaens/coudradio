@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setSelectedIndex, closeSwitcher, toggleSwitcher } from "../../store/features/channelSwitcherSlice";
-import { Modal, Box, TextField, List, ListItem, ListItemButton, ListItemText, InputBase } from "@mui/material";
+import { Modal, Box, List, ListItem, ListItemButton, ListItemText, InputBase } from "@mui/material";
 
 const ChannelSwitcher = () => {
     const { currentChannel, selectedIndex, isSwitcherOpen } = useSelector((state) => state.channelSwitcher);
+    const { channelList } = useSelector((state) => state.user);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const listItems = ['lofi', 'coudrier'];
     const navigate = useNavigate();
     const dispatch = useDispatch();
+
+    const listItems = channelList;
 
     const processedItems = [...listItems]
         .sort((a, b) => a.localeCompare(b))
@@ -105,9 +107,9 @@ const ChannelSwitcher = () => {
                 >
                     {filteredItems.map((item, index) => (
                         <ListItem key={index} disablePadding
-                        sx={{
-                            bgcolor: selectedIndex === index ? 'fourth.main' : 'transparent', // Change background color when selected
-                        }}
+                            sx={{
+                                bgcolor: selectedIndex === index ? 'fourth.main' : 'transparent', // Change background color when selected
+                            }}
                         >
                             <ListItemButton
                                 selected={selectedIndex === index}
