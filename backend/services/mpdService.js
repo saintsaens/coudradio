@@ -214,7 +214,7 @@ const createMediaSegmentRoute = (trackIndex, channel) => {
 };
 
 export const uploadMpd = async (mpdPath, channel) => {
-    const mpdPath = channelMpdPathFor(channel);
+    // const mpdPath = channelMpdPathFor(channel);
     if (!fs.existsSync(mpdPath)) {
         throw new Error(`File not found at path: ${mpdPath}`);
     }

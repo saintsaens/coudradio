@@ -1,34 +1,23 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { uploadSegment } from "./segmentsService.js";
+import { localChannelDirectoryFor } from "./channelCreationService/fileSystemService.js";
 
-export const uploadTrackSegments = async (trackPath, channel) => {
-    const segmentPaths = getTrackSegments(trackPath);
+export const uploadTrackSegments = async (channelName) => {
+    const segmentPaths = getTrackSegments(channelName);
     await Promise.all(segmentPaths.map(segmentPath => uploadSegment(segmentPath, channel)));
 };
 
-export const getTrackSegments = (trackPath) => {
-    if (!trackPath || typeof trackPath !== "string" || !trackPath.endsWith(".mpd")) {
-        throw new Error("Invalid trackPath. Must be a valid MPD file path.");
-    }
+export const getTrackSegments = async (channelName) => {
+  const directory = localChannelDirectoryFor(channelName);
 
-    const directory = path.dirname(trackPath);
-    const baseName = path.basename(trackPath, ".mpd");
+  const files = await fs.readdir(directory);
 
-    try {
-        const files = fs.readdirSync(directory); // Read all files in the directory
-
-        // Filter files that match the pattern "<baseName>_<number>.m4s" or "<baseName>_init.mp4"
-        const segmentPaths = files
-            .filter(
-                file =>
-                    (file.startsWith(baseName) && file.endsWith(".m4s")) ||
-                    file === `${baseName}_init.mp4`
-            )
-            .map(file => path.join(directory, file));
-
-        return segmentPaths;
-    } catch (error) {
-        throw new Error(`Error reading directory: ${error.message}`);
-    }
+  return files
+    .filter(
+      file =>
+        file.endsWith(".m4s") ||
+        file.endsWith("_init.mp4")
+    )
+    .map(file => path.join(directory, file));
 };

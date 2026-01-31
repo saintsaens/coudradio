@@ -1,34 +1,44 @@
 import fs from "fs";
 import path from "path";
-import { uploadSegment } from "./segmentsService.js";
 
-export const uploadTrackSegments = async (trackPath, channel) => {
-    const segmentPaths = getTrackSegments(trackPath);
-    await Promise.all(segmentPaths.map(segmentPath => uploadSegment(segmentPath, channel)));
-};
+const MAX_RETRIES = 5;
+const BASE_DELAY = 1000;
+const TIMEOUT_MS = 15_000;
 
-const getTrackSegments = (trackPath) => {
-    if (!trackPath || typeof trackPath !== "string" || !trackPath.endsWith(".mpd")) {
-        throw new Error("Invalid trackPath. Must be a valid MPD file path.");
-    }
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
-    const directory = path.dirname(trackPath);
-    const baseName = path.basename(trackPath, ".mpd");
+const withTimeout = (promise, ms) =>
+    Promise.race([
+        promise,
+        delay(ms).then(() => {
+            throw new Error("Upload timed out");
+        })
+    ]);
 
+export const uploadSegment = async (segmentPath, segmentName, channel) => {
+  const objectName = `${process.env.MINIO_SEGMENTS_PATH}/${channel}/${segmentName}`;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-        const files = fs.readdirSync(directory); // Read all files in the directory
+      await withTimeout(
+        putSegmentObject(objectName, segmentPath),
+        TIMEOUT_MS
+      );
 
-        // Filter files that match the pattern "<baseName>_<number>.m4s" or "<baseName>_init.mp4"
-        const segmentPaths = files
-            .filter(
-                file =>
-                    (file.startsWith(baseName) && file.endsWith(".m4s")) ||
-                    file === `${baseName}_init.mp4`
-            )
-            .map(file => path.join(directory, file));
+      return objectName;
+    } catch (err) {
+      if (attempt === MAX_RETRIES) {
+        console.error(
+          `Upload failed for ${segmentName} after ${MAX_RETRIES} attempts`,
+          err
+        );
+        return null; // explicit decision, service-level
+      }
 
-        return segmentPaths;
-    } catch (error) {
-        throw new Error(`Error reading directory: ${error.message}`);
+      console.warn(
+        `Upload attempt ${attempt} failed for ${segmentName}, retrying in ${BASE_DELAY * attempt}ms`
+      );
+      await delay(BASE_DELAY * attempt);
     }
+  }
 };

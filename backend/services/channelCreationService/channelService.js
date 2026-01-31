@@ -1,7 +1,7 @@
 import { initializeChannelMpd, finalizeChannelMpd } from "./channelMpdService.js";
 import { getTracklist } from "../tracklistService.js";
 import { uploadMpd } from "../mpdService.js";
-import processTracks from "./trackProcessingService.js";
+import { processTracks } from "./trackProcessingService.js";
 
 export const createChannel = async (channelName) => {
     await initializeChannel(channelName);

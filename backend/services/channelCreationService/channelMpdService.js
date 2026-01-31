@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import path from 'path';
-import { channelMpdPathFor } from "./fileSystemService";
+import { channelMpdPathFor } from "./fileSystemService.js";
 
 dotenv.config({ quiet: true });
 

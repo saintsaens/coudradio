@@ -2,46 +2,6 @@ import { minioClient } from "../db-media/index.js";
 import { readFile } from 'fs/promises';
 
 const bucket = process.env.MINIO_SEGMENTS_BUCKET;
-const MAX_RETRIES = 5;
-const BASE_DELAY = 1000; // 1 second
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-
-export const uploadSegment = async (segmentPath, segmentName, channel) => {
-    const objectName = `${process.env.MINIO_SEGMENTS_PATH}/${channel}/${segmentName}`;
-    const bufferData = await readFile(segmentPath);
-
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            const uploadPromise = minioClient.putObject(bucket, objectName, bufferData);
-
-            await Promise.race([
-                uploadPromise,
-                delay(15000).then(() => {
-                    throw new Error("Upload timed out");
-                }),
-            ]);
-
-            return objectName;
-        } catch (error) {
-            if (attempt < MAX_RETRIES) {
-                console.warn(
-                    `Upload attempt ${attempt} failed for ${segmentName}, retrying in ${BASE_DELAY * attempt}ms`
-                );
-                await delay(BASE_DELAY * attempt);
-            } else {
-                console.error(
-                    `Upload failed for ${segmentName} after ${MAX_RETRIES} attempts`,
-                    error
-                );
-                return null; // do NOT throw
-            }
-        }
-    }
-
-    return null;
-};
 
 export const getSegment = async (channelName, segmentName) => {
     const segmentPath = `${process.env.MINIO_SEGMENTS_PATH}/${channelName}/${segmentName}`;
@@ -51,4 +11,14 @@ export const getSegment = async (channelName, segmentName) => {
     } catch (error) {
         throw new Error(`Failed to retrieve segment: ${error.message}`);
     }
+};
+
+
+export const putSegmentObject = async (objectName, segmentPath) => {
+  const buffer = await readFile(segmentPath);
+  return minioClient.putObject(bucket, objectName, buffer);
+};
+
+export const getSegmentObject = async (objectName) => {
+  return minioClient.getObject(bucket, objectName);
 };

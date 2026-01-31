@@ -12,7 +12,7 @@ export const localChannelDirectoryFor = (channelName) => {
 
 export const ensureDirectoryExists = async (dirPath) => {
     try {
-        await fs.mkdir(dirPath, { recursive: true });
+        await fsPromises.mkdir(dirPath, { recursive: true });
     } catch (err) {
         if (err.code !== "EEXIST") {
             throw err;
