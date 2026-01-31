@@ -7,7 +7,7 @@ export const uploadTrackSegments = async (trackPath, channel) => {
     await Promise.all(segmentPaths.map(segmentPath => uploadSegment(segmentPath, channel)));
 };
 
-export const getTrackSegments = (trackPath) => {
+const getTrackSegments = (trackPath) => {
     if (!trackPath || typeof trackPath !== "string" || !trackPath.endsWith(".mpd")) {
         throw new Error("Invalid trackPath. Must be a valid MPD file path.");
     }

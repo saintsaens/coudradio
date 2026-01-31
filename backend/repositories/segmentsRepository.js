@@ -10,27 +10,37 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const uploadSegment = async (segmentPath, segmentName, channel) => {
     const objectName = `${process.env.MINIO_SEGMENTS_PATH}/${channel}/${segmentName}`;
-    const bufferData = await readFile(segmentPath); // full file into memory
+    const bufferData = await readFile(segmentPath);
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
             const uploadPromise = minioClient.putObject(bucket, objectName, bufferData);
+
             await Promise.race([
                 uploadPromise,
                 delay(15000).then(() => {
                     throw new Error("Upload timed out");
-                })
+                }),
             ]);
+
             return objectName;
         } catch (error) {
             if (attempt < MAX_RETRIES) {
-                console.warn(`Upload attempt ${attempt} failed for ${segmentName}, retrying in ${BASE_DELAY * attempt}ms...`);
+                console.warn(
+                    `Upload attempt ${attempt} failed for ${segmentName}, retrying in ${BASE_DELAY * attempt}ms`
+                );
                 await delay(BASE_DELAY * attempt);
             } else {
-                throw new Error(`Failed to upload segment ${segmentName} after ${MAX_RETRIES} attempts: ${error.message}`);
+                console.error(
+                    `Upload failed for ${segmentName} after ${MAX_RETRIES} attempts`,
+                    error
+                );
+                return null; // do NOT throw
             }
         }
     }
+
+    return null;
 };
 
 export const getSegment = async (channelName, segmentName) => {

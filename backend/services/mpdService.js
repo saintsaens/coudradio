@@ -3,6 +3,7 @@ import path from 'path';
 import xml2js from 'xml2js';
 import * as mpdRepository from "../repositories/mpdRepository.js"
 import { encodeTracks } from "./trackEncodingService.js";
+import { channelMpdPathFor } from "./channelCreationService/fileSystemService.js";
 
 export const extractMediaPresentationDuration = async (mpdPath) => {
     const data = fs.readFileSync(mpdPath, 'utf8');
@@ -213,6 +214,7 @@ const createMediaSegmentRoute = (trackIndex, channel) => {
 };
 
 export const uploadMpd = async (mpdPath, channel) => {
+    const mpdPath = channelMpdPathFor(channel);
     if (!fs.existsSync(mpdPath)) {
         throw new Error(`File not found at path: ${mpdPath}`);
     }

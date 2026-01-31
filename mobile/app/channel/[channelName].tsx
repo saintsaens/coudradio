@@ -1,13 +1,23 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import Video from "react-native-video";
 
 export default function ChannelScreen() {
     const router = useRouter();
     const { channelName } = useLocalSearchParams<{ channelName: string }>();
 
+    const streamUrl = `https://cestunpeu.troal.me/api/${channelName}.mpd`;
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>{channelName}</Text>
+            <Video
+                source={{ uri: streamUrl }}
+                controls={true}
+                resizeMode="cover"
+                paused={false}
+            />
+
             {/* Bottom-right back button */}
             <Pressable
                 style={styles.backButton}

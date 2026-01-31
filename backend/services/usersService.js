@@ -79,3 +79,11 @@ export const deleteUser = async (id) => {
 
     return result;
 };
+
+export const getUserRankAndTotal = async (id) => {
+    const result = await usersRepository.getUserRankAndTotal(id);
+    if (!result) {
+        throw new Error("User not found");
+    }
+    return result;
+};

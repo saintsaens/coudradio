@@ -46,21 +46,37 @@ export const updateUserActivity = async (req, res) => {
             const userId = req.user.id;
             const sessionStartTime = req.user.sessionStartTime;
 
-            // Compute new values for activity and time spent
+            // Use lastActivity as the reference point
             const lastActivityTime = new Date();
-            const newTimeSpent = computeTimeSpent(sessionStartTime, lastActivityTime);
+            const lastRecordedActivity = req.user.lastActivity || lastActivityTime; // Fallback to now if undefined
+
+            // Compute only the delta since last activity
+            const deltaTime = computeTimeSpent(lastRecordedActivity, lastActivityTime);
+
+            // Update session data
+            req.user.lastActivity = lastActivityTime;
+            req.user.timeSpent = (req.user.timeSpent || 0) + deltaTime;
+
 
             // Update session data
             req.user.lastActivity = lastActivityTime;
             const totalTimeSpent = req.user.timeSpent + newTimeSpent;
             req.user.timeSpent = totalTimeSpent;
 
-            // Update database as well (persist the change)
-            const updatedUser = await usersService.updateUser(userId, { lastActivityTime, timeSpent: totalTimeSpent});
+
+            // Persist changes to database
+            const updatedUser = await usersService.updateUser(userId, {
+                lastActivityTime,
+                timeSpent: req.user.timeSpent
+            });
+
             if (!updatedUser) {
                 return res.status(404).json({ error: "User not found" });
             }
-            return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
+            return res.status(200).json({
+                message: "User activity updated successfully",
+                user: updatedUser
+            });
         } catch (err) {
             console.error(err);
             return res.status(500).json({ error: "Internal server error" });
@@ -79,11 +95,11 @@ export const updateSessionStartTime = async (req, res) => {
             // Compute new valeus for session start time and last activity
             const lastActivityTime = new Date();
             const sessionStartTime = lastActivityTime;
-            
+
             // Update session data
             req.user.lastActivity = lastActivityTime;
             req.user.sessionStartTime = sessionStartTime;
-            
+
             // Update database as well (persist the change)
             const updatedUser = usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
             if (!updatedUser) {
@@ -120,16 +136,33 @@ export const deleteUser = async (req, res) => {
 
 export const getUserById = async (req, res) => {
     const { id } = req.params;
-
+    
     try {
         const user = await usersService.getUserById(id);
-
+        
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
-
+        
         return res.status(200).json(user);
     } catch (err) {
         return res.status(500).json({ error: err.message });
+    }
+};
+
+export const getUserRank = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // const userId = req.user.id;
+        const result = await usersService.getUserRankAndTotal(id);
+
+        return res.status(200).json({
+            rank: result.rank,
+            total: result.total
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Internal server error" });
     }
 };

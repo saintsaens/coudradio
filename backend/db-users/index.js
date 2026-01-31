@@ -10,7 +10,7 @@ const pool = new Pool(poolConfig());
 
 pool.connect((err, client, release) => {
   if (err) {
-    return console.error('Error acquiring client', err.stack);
+    return console.error('Problem connecting to database', err.stack);
   }
   console.log('Connected to PostgreSQL database successfully!');
 });

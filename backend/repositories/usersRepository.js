@@ -65,3 +65,19 @@ export const deleteUser = async (id) => {
     const { rows } = await db.query(query, [id]);
     return rows[0];
 };
+
+export const getUserRankAndTotal = async (id) => {
+    const query = `
+        WITH ranked AS (
+            SELECT id, time_spent,
+                   RANK() OVER (ORDER BY time_spent DESC) AS rank
+            FROM ${tableName}
+        )
+        SELECT r.rank, t.total
+        FROM ranked r
+        CROSS JOIN (SELECT COUNT(*) AS total FROM ${tableName}) t
+        WHERE r.id = $1;
+    `;
+    const { rows } = await db.query(query, [id]);
+    return rows[0];
+};
