@@ -49,7 +49,6 @@ const finalizeTrackProcessing = async ({ index, channelName }) => {
 
 const finalizeAllTracksProcessing = async (channelName) => {
     await deleteLocalChannelDirectory(channelName);
-    await cleanupProgress(channelName);
 };
 
 export const uploadTrackSegments = async (channelName, concurrency = 4) => {

@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import path from 'path';
 import { channelMpdPathFor } from "./fileSystemService.js";
-import { transformMpdIntoPeriod, addContentToMpd, getTotalPeriodsDurations, addMediaPresentationDuration } from "../mpdService.js";
+import { transformMpdIntoPeriod, getTotalPeriodsDurations, addMediaPresentationDuration } from "../mpdService.js";
 
 dotenv.config({ quiet: true });
 
@@ -21,17 +21,17 @@ export const initializeChannelMpd = async (channelName) => {
 export const addTrackToChannelMpd = async ({ index, trackMpdPath, channelName }) => {
     const channelMpdPath = channelMpdPathFor(channelName);
     const period = await transformMpdIntoPeriod(index, trackMpdPath, channelName);
-    addContentToMpd(channelMpdPath, period);
+    await addContentToMpd(channelMpdPath, period);
 };
 
 export const finalizeChannelMpd = async (channelName) => {
     const channelMpdPath = channelMpdPathFor(channelName);
     try {
         const mpdFooter = createChannelMpdFooter();
-        fs.appendFileSync(channelMpdPath, `\n${mpdFooter}`);
+        await fs.appendFile(channelMpdPath, `\n${mpdFooter}`);
 
         const totalDuration = await getTotalPeriodsDurations(channelMpdPath);
-        addMediaPresentationDuration(channelMpdPath, totalDuration);
+        await addMediaPresentationDuration(channelMpdPath, totalDuration);
     } catch (error) {
         throw new Error(`Failed to finalize MPD file at ${channelMpdPath}: ${error.message}`);
     }
@@ -47,6 +47,15 @@ const createChannelMpd = async (channelMpdPath) => {
         await fs.writeFile(channelMpdPath, mpdHeader);
     } catch (error) {
         throw new Error(`Failed to create channel MPD file at ${channelMpdPath}: ${error.message}`);
+    }
+};
+
+const addContentToMpd = async (mpdPath, content) => {
+    console.log(`Adding content to MPD…`);
+    try {
+        fs.appendFile(mpdPath, `\n${content}`);
+    } catch (error) {
+        throw new Error(`Failed to update MPD file at ${mpdPath}: ${error.message}`);
     }
 };
 

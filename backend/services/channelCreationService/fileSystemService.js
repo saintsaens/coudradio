@@ -27,7 +27,7 @@ export const createLocalChannelDirectory = async (channelName) => {
 export const deleteLocalChannelDirectory = async (channelName) => {
     const dir = localChannelDirectoryFor(channelName);
     try {
-        await fsPromises.rmdir(dir, { recursive: true });
+        await fsPromises.rm(dir, { recursive: true });
     } catch (error) {
         console.error(`Failed to delete directory at ${dir}: ${error.message}`);
     }
