@@ -9,6 +9,11 @@ export const localChannelDirectoryFor = (channelName) => {
     return path.join(process.env.PUBLIC_DIR, channelName);
 };
 
+export const localMpdDirectoryFor = (channelName) => {
+    validateEnv();
+    return path.join(process.env.PUBLIC_MPD_PATH);
+}
+
 export const ensureDirectoryExists = async (dirPath) => {
     try {
         await fsPromises.mkdir(dirPath, { recursive: true });

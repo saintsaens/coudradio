@@ -4,6 +4,7 @@ import path from 'path';
 import xml2js from 'xml2js';
 import * as mpdRepository from "../repositories/mpdRepository.js"
 import { encodeTracks } from "./trackEncodingService.js";
+import { localMpdDirectoryFor } from "./channelCreationService/fileSystemService.js";
 
 export const extractMediaPresentationDuration = async (mpdPath) => {
     const data = await fs.readFile(mpdPath, 'utf8');
@@ -217,7 +218,8 @@ const createMediaSegmentRoute = (trackIndex, channel) => {
     return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_$Number$.m4s`;
 };
 
-export const uploadMpd = async (mpdPath, channel) => {
+export const uploadMpd = async (channelName) => {
+    const mpdPath = localMpdDirectoryFor(channelName) + `/${channelName}.mpd`;
     try {
         await fs.access(mpdPath);
     } catch {
@@ -227,7 +229,7 @@ export const uploadMpd = async (mpdPath, channel) => {
     const mpdStream = fsSync.createReadStream(mpdPath);
     const mpdName = path.basename(mpdPath);
 
-    return mpdRepository.uploadMpd(mpdStream, mpdName, channel);
+    return mpdRepository.uploadMpd(mpdStream, mpdName, channelName);
 };
 
 export const getMpdStream = async (channelName) => {
