@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { promises as fsPromises } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -51,15 +50,15 @@ export const cleanUpLocalChannelDirectory = async (channelName) => {
     const dir = localChannelDirectoryFor(channelName);
 
     try {
-        const entries = await fs.readdir(dir, { withFileTypes: true });
+        const entries = await fsPromises.readdir(dir, { withFileTypes: true });
 
         for (const entry of entries) {
             const entryPath = path.join(dir, entry.name);
 
             if (entry.isDirectory()) {
-                await fs.rm(entryPath, { recursive: true, force: true });
+                await fsPromises.rm(entryPath, { recursive: true, force: true });
             } else {
-                await fs.unlink(entryPath);
+                await fsPromises.unlink(entryPath);
             }
         }
     } catch (err) {

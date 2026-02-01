@@ -1,5 +1,6 @@
 import { minioClient } from "../db-media/index.js";
 import { readFile } from 'fs/promises';
+import { createReadStream } from "fs";
 
 const bucket = process.env.MINIO_SEGMENTS_BUCKET;
 
@@ -15,8 +16,8 @@ export const getSegment = async (channelName, segmentName) => {
 
 
 export const putSegmentObject = async (objectName, segmentPath) => {
-  const buffer = await readFile(segmentPath);
-  return minioClient.putObject(bucket, objectName, buffer);
+  const stream = createReadStream(segmentPath);
+  return minioClient.putObject(bucket, objectName, stream);
 };
 
 export const getSegmentObject = async (objectName) => {

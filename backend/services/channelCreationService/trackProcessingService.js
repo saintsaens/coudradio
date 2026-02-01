@@ -29,7 +29,7 @@ const processTrack = async ({ index, tracks, channelName }) => {
         const trackMpdPath = await encodeTrack(index, tracks, channelName);
 
         await uploadTrackSegments(channelName);
-        await addTrackToChannelMpd({ index, channelName });
+        await addTrackToChannelMpd({ index, trackMpdPath, channelName });
 
         await finalizeTrackProcessing({ index, channelName });
     } catch (err) {
@@ -52,19 +52,35 @@ const finalizeAllTracksProcessing = async (channelName) => {
     await cleanupProgress(channelName);
 };
 
-export const uploadTrackSegments = async (channelName) => {
-    const segments = await getAllTrackSegments(channelName);
-
+export const uploadTrackSegments = async (channelName, concurrency = 4) => {
     console.log(`Uploading segments…`);
-    await Promise.all(
-        segments.map(segmentPath =>
-            uploadSegment(
+    const segments = await getAllTrackSegments(channelName);
+    const results = [];
+
+    const logProgress = createProgressLogger(segments.length, 100);
+
+    let index = 0;
+
+    async function worker() {
+        while (index < segments.length) {
+            const segmentPath = segments[index++];
+            const segmentName = path.basename(segmentPath);
+
+            const result = await uploadSegment(
                 segmentPath,
-                path.basename(segmentPath),
+                segmentName,
                 channelName
-            )
-        )
-    );
+            );
+
+            results.push(result);
+            logProgress();
+        }
+    }
+
+    const workers = Array.from({ length: concurrency }, worker);
+    await Promise.all(workers);
+
+    return results;
 };
 
 export const getAllTrackSegments = async (channelName) => {
@@ -79,4 +95,15 @@ export const getAllTrackSegments = async (channelName) => {
                 file.endsWith("_init.mp4")
         )
         .map(file => path.join(directory, file));
+};
+
+const createProgressLogger = (total, step = 100) => {
+    let completed = 0;
+
+    return () => {
+        completed++;
+        if (completed % step === 0 || completed === total) {
+            console.log(`Uploaded ${completed}/${total} segments`);
+        }
+    };
 };

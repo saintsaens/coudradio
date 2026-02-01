@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import path from 'path';
 import { channelMpdPathFor } from "./fileSystemService.js";
+import { transformMpdIntoPeriod, addContentToMpd, getTotalPeriodsDurations, addMediaPresentationDuration } from "../mpdService.js";
 
 dotenv.config({ quiet: true });
 
@@ -17,7 +18,7 @@ export const initializeChannelMpd = async (channelName) => {
     }
 };
 
-export const addTrackToChannelMpd = async ({ index, channelName }) => {
+export const addTrackToChannelMpd = async ({ index, trackMpdPath, channelName }) => {
     const channelMpdPath = channelMpdPathFor(channelName);
     const period = await transformMpdIntoPeriod(index, trackMpdPath, channelName);
     addContentToMpd(channelMpdPath, period);
@@ -32,7 +33,7 @@ export const finalizeChannelMpd = async (channelName) => {
         const totalDuration = await getTotalPeriodsDurations(channelMpdPath);
         addMediaPresentationDuration(channelMpdPath, totalDuration);
     } catch (error) {
-        throw new Error(`Failed to finalize MPD file at ${mpdPath}: ${error.message}`);
+        throw new Error(`Failed to finalize MPD file at ${channelMpdPath}: ${error.message}`);
     }
 };
 
