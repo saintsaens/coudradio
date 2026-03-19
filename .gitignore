@@ -1,3 +1,5 @@
+**/.idea
+**/.cursor
 **/node_modules
 **/assets/music
 **/package-lock.json
