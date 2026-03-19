@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { FlatList, View, Text, StyleSheet, Pressable } from "react-native";
 import { CHANNELS } from "../constants";
 import { useRouter } from "expo-router";
 
@@ -7,19 +7,19 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {CHANNELS.map((channel, index) => (
+    <FlatList
+      data={CHANNELS}
+      keyExtractor={(item) => item}
+ItemSeparatorComponent={() => <View style={styles.divider} />}
+      renderItem={({ item }) => (
         <Pressable
-          key={channel}
-          onPress={() => router.push(`/channel/${channel}`)}
-          style={({ pressed }) => [
-            styles.section,
-            pressed && styles.sectionPressed,
-          ]}
+          onPress={() => router.push(`/channel/${item}`)}
+          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
         >
-          <Text style={styles.text}>{channel}</Text>
-          {index < CHANNELS.length - 1 && <View style={styles.divider} />}
+          <Text style={styles.text}>{item}</Text>
         </Pressable>
-      ))}
+      )}
+    />
     </View>
   );
 }
@@ -27,25 +27,22 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#041C32',
   },
-  section: {
-    flex: 1, // take equal vertical space
-    justifyContent: "center", // center vertically
-    alignItems: "center", // center horizontally
-    width: "100%",
+  row: {
+    paddingVertical: 36,
+    paddingHorizontal: 24,
   },
-  sectionPressed: {
-    backgroundColor: "#064663",
+  rowPressed: {
+    backgroundColor: '#064663',
   },
   text: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: 'iAWriterDuospace-Regular',
+    color: '#ECB365',
   },
   divider: {
     height: 1,
-    width: "100%",
-    backgroundColor: "#000000",
-    position: "absolute",
-    bottom: 0,
+    backgroundColor: '#064663',
   },
 });
