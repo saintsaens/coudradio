@@ -148,7 +148,7 @@ describe("getTotalPeriodsDurations", () => {
         type="static">
 
       <Period id="track0" duration="PT1H2M53.1S">
-        <AdaptationSet id="track0" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+        <AdaptationSet id="0" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
           <Representation id="track0" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
             <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />
             <SegmentTemplate timescale="1000000" duration="5000000" initialization="https://cestunpeu.troal.me/api/segment/coudrier/track0_init.mp4" media="https://cestunpeu.troal.me/api/segment/coudrier/track0_$Number$.m4s" startNumber="1">
@@ -158,7 +158,7 @@ describe("getTotalPeriodsDurations", () => {
       </Period>
 
       <Period id="track1" duration="PT10M53.1S">
-        <AdaptationSet id="track1" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+        <AdaptationSet id="1" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
           <Representation id="track1" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
             <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />
             <SegmentTemplate timescale="1000000" duration="5000000" initialization="https://cestunpeu.troal.me/api/segment/coudrier/track1_init.mp4" media="https://cestunpeu.troal.me/api/segment/coudrier/track1_$Number$.m4s" startNumber="1">
@@ -187,7 +187,7 @@ describe("addMediaPresentationDuration", () => {
         type="static">
 
       <Period id="track0" duration="PT1H2M53.1S">
-        <AdaptationSet id="track0" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+        <AdaptationSet id="0" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
           <Representation id="track0" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
             <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />
             <SegmentTemplate timescale="1000000" duration="5000000" initialization="https://cestunpeu.troal.me/api/segment/coudrier/track0_init.mp4" media="https://cestunpeu.troal.me/api/segment/coudrier/track0_$Number$.m4s" startNumber="1">
@@ -197,7 +197,7 @@ describe("addMediaPresentationDuration", () => {
       </Period>
 
       <Period id="track1" duration="PT10M53.1S">
-        <AdaptationSet id="track1" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+        <AdaptationSet id="1" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
           <Representation id="track1" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
             <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />
             <SegmentTemplate timescale="1000000" duration="5000000" initialization="https://cestunpeu.troal.me/api/segment/coudrier/track1_init.mp4" media="https://cestunpeu.troal.me/api/segment/coudrier/track1_$Number$.m4s" startNumber="1">
@@ -216,7 +216,7 @@ describe("addMediaPresentationDuration", () => {
         mediaPresentationDuration="PT1H13M46.2S">
 
       <Period id="track0" duration="PT1H2M53.1S">
-        <AdaptationSet id="track0" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+        <AdaptationSet id="0" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
           <Representation id="track0" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
             <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />
             <SegmentTemplate timescale="1000000" duration="5000000" initialization="https://cestunpeu.troal.me/api/segment/coudrier/track0_init.mp4" media="https://cestunpeu.troal.me/api/segment/coudrier/track0_$Number$.m4s" startNumber="1">
@@ -226,7 +226,7 @@ describe("addMediaPresentationDuration", () => {
       </Period>
 
       <Period id="track1" duration="PT10M53.1S">
-        <AdaptationSet id="track1" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+        <AdaptationSet id="1" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
           <Representation id="track1" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
             <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />
             <SegmentTemplate timescale="1000000" duration="5000000" initialization="https://cestunpeu.troal.me/api/segment/coudrier/track1_init.mp4" media="https://cestunpeu.troal.me/api/segment/coudrier/track1_$Number$.m4s" startNumber="1">

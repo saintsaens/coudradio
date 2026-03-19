@@ -186,7 +186,7 @@ export const transformMpdIntoPeriod = async (index, sourceMpd, channel) => {
     const mediaSegmentRoute = createMediaSegmentRoute(index, channel);
 
     return `<Period id="track${index}" duration="${periodDuration}">
-  <AdaptationSet id="track${index}" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+  <AdaptationSet id="${index}" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
     <Representation id="track${index}" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
       ${audioChannelConfiguration}
       <SegmentTemplate
