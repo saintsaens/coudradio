@@ -8,4 +8,7 @@ export const CHANNELS: string[] = [
   "macroblank",
   "shpongle",
   "kaamelott",
+  "disney",
+  "shyamalan",
+  "trip-hop",
 ];
