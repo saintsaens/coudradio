@@ -37,7 +37,7 @@ export const updateLastActivity = createAsyncThunk('user/updateLastActivity', as
 });
 
 export const updateSessionStartTime = createAsyncThunk('user/updateSessionStartTime', async () => {
-    const response = await fetch(`${baseUrl}/users/close`, {
+    const response = await fetch(`${baseUrl}/users/open`, {
         method: 'PATCH',
         credentials: 'include',
     });

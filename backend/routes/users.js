@@ -8,5 +8,5 @@ usersRouter.get('/:id', getUserById);
 usersRouter.get('/:id/rank', getUserRank);
 usersRouter.put('/:id', updateUser);
 usersRouter.patch('/activity', updateUserActivity);
-usersRouter.patch('/close', updateSessionStartTime);
+usersRouter.patch('/open', updateSessionStartTime);
 usersRouter.delete('/delete/:id', deleteUser);
