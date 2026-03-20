@@ -27,6 +27,7 @@ const MobileMuteToggler = ({ audioRef, channelName, onShowChannels }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                WebkitTapHighlightColor: 'transparent',
             }}
         >
             <MobileChannelContainer channelName={channelName} onShowChannels={onShowChannels} isMuted={isMuted} />
