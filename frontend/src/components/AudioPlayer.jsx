@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import dashjs from "dashjs";
 import { computeStartTime } from "../utils/time.js";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { setMuted, checkStream, setPlaying } from "../store/features/audioPlayerSlice.js";
 import Background from "./Background.jsx";
 
