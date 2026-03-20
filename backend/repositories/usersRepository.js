@@ -66,6 +66,16 @@ export const deleteUser = async (id) => {
     return rows[0];
 };
 
+export const getActiveAuthenticatedCount = async () => {
+    const query = `
+        SELECT COUNT(*) AS count
+        FROM ${tableName}
+        WHERE last_activity_time > NOW() - INTERVAL '2 minutes';
+    `;
+    const { rows } = await db.query(query);
+    return parseInt(rows[0].count, 10);
+};
+
 export const getUserRankAndTotal = async (id) => {
     const query = `
         WITH ranked AS (

@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import * as usersRepository from "../repositories/usersRepository.js"
+import { getRecentConnectionCount } from "../loaders/connectionTracker.js"
 
 const saltRounds = 10;
 
@@ -78,6 +79,13 @@ export const deleteUser = async (id) => {
     const result = await usersRepository.deleteUser(id);
 
     return result;
+};
+
+export const getListenerCounts = async () => {
+    const authenticated = await usersRepository.getActiveAuthenticatedCount();
+    const total = getRecentConnectionCount();
+    const anonymous = Math.max(0, total - authenticated);
+    return { authenticated, anonymous };
 };
 
 export const getUserRankAndTotal = async (id) => {
