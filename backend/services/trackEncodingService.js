@@ -19,6 +19,7 @@ export const encodeTrack = (index, playlist, channelName) => {
       .noVideo()
       .audioCodec('aac')
       .audioBitrate('320k')
+      .audioFilters('loudnorm')
       .format('dash')
       .outputOptions([
         '-y',                           // Overwrite output files without asking
