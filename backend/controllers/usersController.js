@@ -143,6 +143,16 @@ export const getUserById = async (req, res) => {
     }
 };
 
+export const getListeners = async (req, res) => {
+    try {
+        const counts = await usersService.getListenerCounts();
+        return res.status(200).json(counts);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
 export const getUserRank = async (req, res) => {
     const { id } = req.params;
 
