@@ -4,7 +4,7 @@ import { Box, List, ListItem, ListItemButton, ListItemText, Divider } from '@mui
 
 const channels = (import.meta.env.VITE_CHANNELS_LOGGEDIN || '').split(',').filter(Boolean);
 
-const ChannelList = () => {
+const ChannelList = ({ currentChannel, onClose }) => {
     const navigate = useNavigate();
 
     return (
@@ -14,7 +14,7 @@ const ChannelList = () => {
                     <React.Fragment key={channel}>
                         <ListItem disablePadding>
                             <ListItemButton
-                                onClick={() => navigate(`/${channel}`)}
+                                onClick={() => channel === currentChannel ? onClose?.() : navigate(`/${channel}`)}
                                 sx={{
                                     py: 4,
                                     px: 3,

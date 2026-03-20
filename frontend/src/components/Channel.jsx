@@ -62,7 +62,7 @@ export default function Channel({ channelName }) {
             {isMobile && (
                 <Fade in={showChannelList} timeout={200} unmountOnExit>
                     <Box sx={{ position: 'fixed', inset: 0, zIndex: 2000, bgcolor: '#041C32', overflowY: 'auto' }}>
-                        <ChannelList />
+                        <ChannelList currentChannel={channelName} onClose={() => setShowChannelList(false)} />
                     </Box>
                 </Fade>
             )}
