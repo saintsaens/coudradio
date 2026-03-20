@@ -11,9 +11,7 @@ export const initializeChannelMpd = async (channelName) => {
 
     try {
         await fs.access(channelMpdPath);
-        console.log(`Reusing ${channelMpdPath}…`);
     } catch {
-        console.log(`Creating ${channelMpdPath}…`);
         await createChannelMpd(channelMpdPath);
     }
 };
@@ -51,7 +49,6 @@ const createChannelMpd = async (channelMpdPath) => {
 };
 
 const addContentToMpd = async (mpdPath, content) => {
-    console.log(`Adding content to MPD…`);
     try {
         await fs.appendFile(mpdPath, `\n${content}`);
     } catch (error) {

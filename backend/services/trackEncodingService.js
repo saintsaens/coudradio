@@ -7,7 +7,6 @@ import { localTrackDirectoryFor, ensureDirectoryExists } from "./channelCreation
 const unlink = util.promisify(fs.unlink);
 
 export const encodeTrack = async (index, playlist, channelName) => {
-  console.log(`Encoding track ${index + 1}…`);
   const trackDirectory = localTrackDirectoryFor(channelName, index);
   await ensureDirectoryExists(trackDirectory);
   const currentTrack = playlist[index];
