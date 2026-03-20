@@ -57,12 +57,6 @@ export const updateUserActivity = async (req, res) => {
             req.user.timeSpent = (req.user.timeSpent || 0) + deltaTime;
 
 
-            // Update session data
-            req.user.lastActivity = lastActivityTime;
-            const totalTimeSpent = req.user.timeSpent + newTimeSpent;
-            req.user.timeSpent = totalTimeSpent;
-
-
             // Persist changes to database
             const updatedUser = await usersService.updateUser(userId, {
                 lastActivityTime,
