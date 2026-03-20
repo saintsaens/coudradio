@@ -8,7 +8,7 @@ import Unavailable from "./Unavailable";
 import { fetchUser, updateLastActivity, updateSessionStartTime } from "../store/features/userSlice";
 import useIsMobile from "../hooks/useIsMobile";
 import ChannelList from "./mobile/ChannelList";
-import { Box } from "@mui/material";
+import { Box, Fade } from "@mui/material";
 
 export default function Channel({ channelName }) {
     const audioRef = useRef(null);
@@ -59,10 +59,12 @@ export default function Channel({ channelName }) {
                 />
             )}
 
-            {isMobile && showChannelList && (
-                <Box sx={{ position: 'fixed', inset: 0, zIndex: 2000, bgcolor: '#041C32', overflowY: 'auto' }}>
-                    <ChannelList />
-                </Box>
+            {isMobile && (
+                <Fade in={showChannelList} timeout={200} unmountOnExit>
+                    <Box sx={{ position: 'fixed', inset: 0, zIndex: 2000, bgcolor: '#041C32', overflowY: 'auto' }}>
+                        <ChannelList />
+                    </Box>
+                </Fade>
             )}
         </>
     );

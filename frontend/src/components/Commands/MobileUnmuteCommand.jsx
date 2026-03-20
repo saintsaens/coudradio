@@ -13,7 +13,7 @@ const MobileUnmuteCommand = () => {
         left: 0,
         width: "100%",
         height: "100%",
-        backgroundColor: "background.paper",
+        backgroundColor: "background.default",
         zIndex: 1000,
       }}
     >
