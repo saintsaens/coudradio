@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 export default function MobileChannelContainer({ channelName, onShowChannels }) {
 
     return (
-        <Grid container sx={{ height: "100%", padding: 2 }}>
+        <Grid container sx={{ height: "100%", width: "100%", padding: 2 }}>
             <Grid size={12} sx={{ height: "20%" }}>
                 <Typography variant="body2">Tap: mute</Typography>
             </Grid>
