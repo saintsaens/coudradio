@@ -1,6 +1,10 @@
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import TrackPlayer from 'react-native-track-player';
 import { PlayerProvider } from '../context/PlayerContext';
+import { PlaybackService } from '../services/PlaybackService';
+
+TrackPlayer.registerPlaybackService(() => PlaybackService);
 
 export default function RootLayout() {
   useFonts({

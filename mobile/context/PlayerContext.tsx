@@ -1,6 +1,5 @@
-import { createContext, useContext, useRef, useState } from "react";
-import Video, { VideoRef } from "react-native-video";
-import { StyleSheet } from "react-native";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import TrackPlayer, { Capability, Event, useProgress } from "react-native-track-player";
 
 const EPOCH = new Date('2024-05-04T13:37:00+01:00').getTime() / 1000;
 
@@ -25,40 +24,54 @@ const PlayerContext = createContext<PlayerContextType>({
 
 export const usePlayer = () => useContext(PlayerContext);
 
-export function PlayerProvider({ children }: { children: React.ReactNode }) {
-    const [channelName, setChannelName] = useState<string | null>(null);
-    const [muted, setMuted] = useState(false);
-    const videoRef = useRef<VideoRef>(null);
+async function setupPlayer() {
+    await TrackPlayer.setupPlayer({ autoHandleInterruptions: true });
+    await TrackPlayer.updateOptions({
+        capabilities: [Capability.Play, Capability.Pause, Capability.Stop],
+        compactCapabilities: [Capability.Play, Capability.Pause],
+    });
+}
 
-    const handleLoad = (data: { duration: number }) => {
-        const start = computeStartTime(data.duration);
-        videoRef.current?.seek(start);
+export function PlayerProvider({ children }: { children: React.ReactNode }) {
+    const [channelName, setChannelNameState] = useState<string | null>(null);
+    const [muted, setMutedState] = useState(false);
+    const hasSeekRef = useRef(false);
+    const { duration } = useProgress();
+
+    useEffect(() => {
+        setupPlayer().catch(console.error);
+    }, []);
+
+    const setChannelName = (name: string) => {
+        setChannelNameState(name);
+        hasSeekRef.current = false;
+        TrackPlayer.reset()
+            .then(() => TrackPlayer.add({
+                id: name,
+                url: `https://cestunpeu.troal.me/api/${name}`,
+                title: name,
+                artist: 'Coudradio',
+                artwork: require('../assets/icons/ios-light.png'),
+            }))
+            .then(() => TrackPlayer.play())
+            .catch(console.error);
+    };
+
+    useEffect(() => {
+        if (duration > 0 && channelName && !hasSeekRef.current) {
+            hasSeekRef.current = true;
+            TrackPlayer.seekTo(computeStartTime(duration)).catch(console.error);
+        }
+    }, [duration, channelName]);
+
+    const setMuted = (value: boolean) => {
+        setMutedState(value);
+        TrackPlayer.setVolume(value ? 0 : 1).catch(console.error);
     };
 
     return (
         <PlayerContext.Provider value={{ channelName, setChannelName, muted, setMuted }}>
-            {channelName && (
-                <Video
-                    ref={videoRef}
-                    source={{ uri: `https://cestunpeu.troal.me/api/${channelName}`, type: "mpd" }}
-                    paused={false}
-                    audioOnly={true}
-                    muted={muted}
-                    playInBackground={true}
-                    playWhenInactive={true}
-                    style={styles.hidden}
-                    onLoad={handleLoad}
-                    onError={(e) => console.error("Stream error:", JSON.stringify(e))}
-                />
-            )}
             {children}
         </PlayerContext.Provider>
     );
 }
-
-const styles = StyleSheet.create({
-    hidden: {
-        width: 0,
-        height: 0,
-    },
-});
