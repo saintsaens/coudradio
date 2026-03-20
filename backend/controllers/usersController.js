@@ -44,7 +44,6 @@ export const updateUserActivity = async (req, res) => {
         try {
             // Get user data from the current session
             const userId = req.user.id;
-            const sessionStartTime = req.user.sessionStartTime;
 
             // Use lastActivity as the reference point
             const lastActivityTime = new Date();
