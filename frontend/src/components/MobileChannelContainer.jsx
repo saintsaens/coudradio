@@ -25,6 +25,7 @@ export default function MobileChannelContainer({ channelName, onShowChannels, is
                         py: 1.5,
                         mb: 2,
                         '&:hover': { bgcolor: '#064663' },
+                        '&:active': { bgcolor: '#064663' },
                         WebkitTapHighlightColor: 'transparent',
                     }}
                 >
