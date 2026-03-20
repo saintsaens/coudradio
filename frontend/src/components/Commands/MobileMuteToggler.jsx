@@ -29,10 +29,10 @@ const MobileMuteToggler = ({ audioRef, channelName, onShowChannels }) => {
                 justifyContent: 'center',
             }}
         >
-            {isMuted
-                ? <Typography variant="h2">tap to unmute</Typography>
-                : <MobileChannelContainer channelName={channelName} onShowChannels={onShowChannels} />
-            }
+            <MobileChannelContainer channelName={channelName} onShowChannels={onShowChannels} />
+            {isMuted && (
+                <Typography variant="h2" sx={{ position: 'absolute' }}>tap to unmute</Typography>
+            )}
         </Box>
     );
 };
