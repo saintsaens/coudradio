@@ -40,10 +40,6 @@ export const ensureDirectoryExists = async (dirPath) => {
     }
 };
 
-export const createLocalChannelDirectory = async (channelName) => {
-    const dir = localChannelDirectoryFor(channelName);
-    ensureDirectoryExists(dir);
-};
 
 export const deleteLocalChannelDirectory = async (channelName) => {
     const dir = localChannelDirectoryFor(channelName);
@@ -59,13 +55,6 @@ export const channelMpdPathFor = (channelName) => {
     return path.join(process.env.PUBLIC_MPD_PATH, `${channelName}.mpd`);
 };
 
-export const deleteTrackMpd = async (mpdPath) => {
-    try {
-        await fsPromises.unlink(filePath);
-    } catch (error) {
-        console.error(`Failed to delete file at ${filePath}: ${error.message}`);
-    }
-}
 
 export const cleanUpLocalChannelDirectory = async (channelName) => {
     const dir = localChannelDirectoryFor(channelName);

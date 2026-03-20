@@ -53,7 +53,7 @@ const createChannelMpd = async (channelMpdPath) => {
 const addContentToMpd = async (mpdPath, content) => {
     console.log(`Adding content to MPD…`);
     try {
-        fs.appendFile(mpdPath, `\n${content}`);
+        await fs.appendFile(mpdPath, `\n${content}`);
     } catch (error) {
         throw new Error(`Failed to update MPD file at ${mpdPath}: ${error.message}`);
     }
