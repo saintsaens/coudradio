@@ -4,12 +4,12 @@ import Typography from "@mui/material/Typography";
 import Grid from '@mui/material/Grid2';
 import Button from "@mui/material/Button";
 
-export default function MobileChannelContainer({ channelName, onShowChannels }) {
+export default function MobileChannelContainer({ channelName, onShowChannels, isMuted }) {
 
     return (
         <Grid container sx={{ height: "100%", width: "100%", padding: 2 }}>
             <Grid size={12} sx={{ height: "20%" }}>
-                <Typography variant="body2">Tap: mute</Typography>
+                {!isMuted && <Typography variant="body2">Tap: mute</Typography>}
             </Grid>
             <Grid size={12} sx={{ height: "60%" }}>
                 <Body channelName={channelName} />
