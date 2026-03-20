@@ -22,7 +22,7 @@ const MobileMuteToggler = ({ audioRef, channelName, onShowChannels }) => {
             sx={{
                 position: 'fixed',
                 inset: 0,
-                backgroundColor: isMuted ? 'background.paper' : 'transparent',
+                backgroundColor: 'transparent',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
