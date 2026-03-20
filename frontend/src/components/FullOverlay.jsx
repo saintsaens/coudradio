@@ -11,8 +11,9 @@ const FullOverlay = ({ children, sx, ...props }) => {
         width: '100vw',
         height: '100vh',
         display: 'flex',
-        justifyContent: 'center', // Center horizontally
-        alignItems: 'center', // Center vertically
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'background.default',
         ...sx, // Allow additional styles to override the default ones
       }}
       {...props}
