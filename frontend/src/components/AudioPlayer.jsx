@@ -35,6 +35,15 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     });
     player.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, () => {
       dispatch(setPlaying(true));
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: channelName,
+          artist: 'Coudradio',
+          artwork: [{ src: '/icon-512.png', sizes: '512x512', type: 'image/png' }],
+        });
+        navigator.mediaSession.setActionHandler('play', () => video.play());
+        navigator.mediaSession.setActionHandler('pause', () => video.pause());
+      }
     });
   };
 
