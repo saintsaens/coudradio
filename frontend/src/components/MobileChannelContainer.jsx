@@ -2,8 +2,12 @@ import React from 'react';
 import Body from "./Body/Body";
 import Typography from "@mui/material/Typography";
 import Grid from '@mui/material/Grid2';
+import Button from "@mui/material/Button";
+import { useNavigate } from 'react-router-dom';
 
 export default function MobileChannelContainer({ channelName }) {
+    const navigate = useNavigate();
+
     return (
         <Grid container sx={{ height: "100%", padding: 2 }}>
             <Grid size={12} sx={{ height: "20%" }}>
@@ -12,7 +16,21 @@ export default function MobileChannelContainer({ channelName }) {
             <Grid size={12} sx={{ height: "60%" }}>
                 <Body channelName={channelName} />
             </Grid>
-            <Grid size={12} sx={{ height: "20%" }}>
+            <Grid size={12} sx={{ height: "20%", display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                <Button
+                    onClick={(e) => { e.stopPropagation(); navigate('/channels'); }}
+                    sx={{
+                        color: '#ECB365',
+                        bgcolor: '#04293A',
+                        borderRadius: 4,
+                        px: 3,
+                        py: 1.5,
+                        mb: 2,
+                        '&:hover': { bgcolor: '#064663' },
+                    }}
+                >
+                    ← Channels
+                </Button>
             </Grid>
         </Grid>
     );
