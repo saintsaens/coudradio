@@ -4,7 +4,7 @@ import { setMuted } from "../../store/features/audioPlayerSlice";
 import MobileChannelContainer from "../MobileChannelContainer";
 import { Typography, Box } from "@mui/material";
 
-const MobileMuteToggler = ({ audioRef, channelName }) => {
+const MobileMuteToggler = ({ audioRef, channelName, onShowChannels }) => {
     const isMuted = useSelector((state) => state.audioPlayer.isMuted);
     const dispatch = useDispatch();
 
@@ -31,7 +31,7 @@ const MobileMuteToggler = ({ audioRef, channelName }) => {
         >
             {isMuted
                 ? <Typography variant="h2">Unmute</Typography>
-                : <MobileChannelContainer channelName={channelName} />
+                : <MobileChannelContainer channelName={channelName} onShowChannels={onShowChannels} />
             }
         </Box>
     );

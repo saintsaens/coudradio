@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AudioPlayer from "./AudioPlayer";
 import { setCurrentChannel } from "../store/features/channelSwitcherSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,9 @@ import MuteToggler from "./Commands/MuteToggler";
 import Loading from "./Loading";
 import Unavailable from "./Unavailable";
 import { fetchUser, updateLastActivity, updateSessionStartTime } from "../store/features/userSlice";
+import useIsMobile from "../hooks/useIsMobile";
+import ChannelList from "./mobile/ChannelList";
+import { Box } from "@mui/material";
 
 export default function Channel({ channelName }) {
     const audioRef = useRef(null);
@@ -13,6 +16,12 @@ export default function Channel({ channelName }) {
     const error = useSelector((state) => state.audioPlayer.error);
     const { userId } = useSelector((state) => state.user);
     const dispatch = useDispatch();
+    const isMobile = useIsMobile();
+    const [showChannelList, setShowChannelList] = useState(false);
+
+    useEffect(() => {
+        setShowChannelList(false);
+    }, [channelName]);
 
     useEffect(() => {
         dispatch(setCurrentChannel(channelName));
@@ -28,29 +37,32 @@ export default function Channel({ channelName }) {
                 dispatch(updateLastActivity());
             };
             dispatch(updateSessionStartTime());
-            const interval = setInterval(updateActivity, 59000); // Run every 59 seconds
-            return () => clearInterval(interval); // Cleanup on unmount
+            const interval = setInterval(updateActivity, 59000);
+            return () => clearInterval(interval);
         }
     }, [dispatch, userId]);
 
     if (error) {
-        return (
-            <Unavailable />
-        );
+        return <Unavailable />;
     }
 
     return (
         <>
             <AudioPlayer audioRef={audioRef} channelName={channelName} />
 
-            {!playing && (
-                <Loading />
-            )}
+            {!playing && <Loading />}
             {playing && (
                 <MuteToggler
                     audioRef={audioRef}
                     channelName={channelName}
+                    onShowChannels={() => setShowChannelList(true)}
                 />
+            )}
+
+            {isMobile && showChannelList && (
+                <Box sx={{ position: 'fixed', inset: 0, zIndex: 2000, bgcolor: '#041C32', overflowY: 'auto' }}>
+                    <ChannelList />
+                </Box>
             )}
         </>
     );
