@@ -1,22 +1,16 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, List, ListItem, ListItemButton, ListItemText, Divider } from '@mui/material';
-import { fetchUser } from '../../store/features/userSlice';
+
+const channels = (import.meta.env.VITE_CHANNELS_LOGGEDIN || '').split(',').filter(Boolean);
 
 const ChannelList = () => {
-    const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { channelList } = useSelector((state) => state.user);
-
-    useEffect(() => {
-        dispatch(fetchUser());
-    }, [dispatch]);
 
     return (
         <Box sx={{ bgcolor: '#041C32', minHeight: '100vh' }}>
             <List disablePadding>
-                {channelList.map((channel, index) => (
+                {channels.map((channel, index) => (
                     <React.Fragment key={channel}>
                         <ListItem disablePadding>
                             <ListItemButton
@@ -41,7 +35,7 @@ const ChannelList = () => {
                                 />
                             </ListItemButton>
                         </ListItem>
-                        {index < channelList.length - 1 && (
+                        {index < channels.length - 1 && (
                             <Divider sx={{ bgcolor: '#064663' }} />
                         )}
                     </React.Fragment>
