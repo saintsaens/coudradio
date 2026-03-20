@@ -2,15 +2,16 @@ import ffmpeg from 'fluent-ffmpeg';
 import path from "path";
 import fs from "fs";
 import util from "util";
-import { localChannelDirectoryFor } from "./channelCreationService/fileSystemService.js";
+import { localTrackDirectoryFor, ensureDirectoryExists } from "./channelCreationService/fileSystemService.js";
 
 const unlink = util.promisify(fs.unlink);
 
-export const encodeTrack = (index, playlist, channelName) => {
+export const encodeTrack = async (index, playlist, channelName) => {
   console.log(`Encoding track ${index + 1}…`);
-  const localChannelDirectory = localChannelDirectoryFor(channelName);
+  const trackDirectory = localTrackDirectoryFor(channelName, index);
+  await ensureDirectoryExists(trackDirectory);
   const currentTrack = playlist[index];
-  const playlistPath = `${localChannelDirectory}/track${index}.mpd`;  // Output MPD file path
+  const playlistPath = `${trackDirectory}/track${index}.mpd`;
 
   return new Promise((resolve, reject) => {
     const command = ffmpeg()

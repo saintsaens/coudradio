@@ -9,6 +9,22 @@ export const localChannelDirectoryFor = (channelName) => {
     return path.join(process.env.PUBLIC_DIR, channelName);
 };
 
+export const localTrackDirectoryFor = (channelName, index) => {
+    validateEnv();
+    return path.join(process.env.PUBLIC_DIR, channelName, `track${index}`);
+};
+
+export const cleanUpLocalTrackDirectory = async (channelName, index) => {
+    const dir = localTrackDirectoryFor(channelName, index);
+    try {
+        await fsPromises.rm(dir, { recursive: true });
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            console.error(`Failed to delete directory at ${dir}: ${error.message}`);
+        }
+    }
+};
+
 export const localMpdDirectoryFor = (channelName) => {
     validateEnv();
     return path.join(process.env.PUBLIC_MPD_PATH);

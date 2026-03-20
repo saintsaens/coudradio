@@ -1,10 +1,9 @@
-import { loadProgress, cleanupProgress, saveProgress } from "./progressSavingService.js";
+import { loadProgress, saveProgress } from "./progressSavingService.js";
 import { encodeTrack } from "../trackEncodingService.js";
 import { addTrackToChannelMpd } from "./channelMpdService.js";
 import {
-    localChannelDirectoryFor,
-    cleanUpLocalChannelDirectory,
-    createLocalChannelDirectory,
+    localTrackDirectoryFor,
+    cleanUpLocalTrackDirectory,
     deleteLocalChannelDirectory
 } from "./fileSystemService.js";
 import { uploadSegment } from "./segmentsUploadingService.js";
@@ -13,47 +12,41 @@ import path from "path";
 
 export const processTracks = async ({ tracks, channelName }) => {
     const lastProcessedIndex = await loadProgress(channelName);
+    const startIndex = lastProcessedIndex + 1;
 
-    await initializeTrackProcessing(channelName);
+    if (startIndex >= tracks.length) return;
 
-    for (let index = lastProcessedIndex + 1; index < tracks.length; index++) {
+    // Start encoding the first track
+    let encodePromise = encodeTrack(startIndex, tracks, channelName);
+
+    for (let index = startIndex; index < tracks.length; index++) {
         console.log(`Processing track ${index + 1} of ${tracks.length}…`);
-        await processTrack({ index, tracks, channelName });
+
+        // Wait for current track's encoding to finish
+        const trackMpdPath = await encodePromise;
+
+        // Immediately start encoding the next track (overlaps with upload below)
+        if (index + 1 < tracks.length) {
+            encodePromise = encodeTrack(index + 1, tracks, channelName);
+        }
+
+        try {
+            await uploadTrackSegments(channelName, index);
+            await addTrackToChannelMpd({ index, trackMpdPath, channelName });
+            await saveProgress(channelName, index);
+            await cleanUpLocalTrackDirectory(channelName, index);
+        } catch (err) {
+            console.error(`Error processing track ${index + 1}:`, err);
+            throw err;
+        }
     }
 
-    await finalizeAllTracksProcessing(channelName);
-};
-
-const processTrack = async ({ index, tracks, channelName }) => {
-    try {
-        const trackMpdPath = await encodeTrack(index, tracks, channelName);
-
-        await uploadTrackSegments(channelName);
-        await addTrackToChannelMpd({ index, trackMpdPath, channelName });
-
-        await finalizeTrackProcessing({ index, channelName });
-    } catch (err) {
-        console.error(`Error processing track ${index + 1}:`, err);
-        throw err;
-    }
-};
-
-const initializeTrackProcessing = async (channelName) => {
-    await createLocalChannelDirectory(channelName);
-};
-
-const finalizeTrackProcessing = async ({ index, channelName }) => {
-    await saveProgress(channelName, index);
-    await cleanUpLocalChannelDirectory(channelName);
-}
-
-const finalizeAllTracksProcessing = async (channelName) => {
     await deleteLocalChannelDirectory(channelName);
 };
 
-export const uploadTrackSegments = async (channelName, concurrency = 4) => {
-    console.log(`Uploading segments…`);
-    const segments = await getAllTrackSegments(channelName);
+export const uploadTrackSegments = async (channelName, trackIndex, concurrency = 4) => {
+    console.log(`Uploading segments for track ${trackIndex + 1}…`);
+    const segments = await getAllTrackSegments(channelName, trackIndex);
     const results = [];
 
     const logProgress = createProgressLogger(segments.length, 100);
@@ -82,8 +75,8 @@ export const uploadTrackSegments = async (channelName, concurrency = 4) => {
     return results;
 };
 
-export const getAllTrackSegments = async (channelName) => {
-    const directory = localChannelDirectoryFor(channelName);
+export const getAllTrackSegments = async (channelName, trackIndex) => {
+    const directory = localTrackDirectoryFor(channelName, trackIndex);
 
     const files = await fs.readdir(directory);
 
