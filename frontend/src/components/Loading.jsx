@@ -3,12 +3,12 @@ import Typography from '@mui/material/Typography';
 import Fade from '@mui/material/Fade';
 import FullOverlay from "./FullOverlay";
 
-const Loading = () => {
+const Loading = ({ channelName }) => {
     return (
         <Fade in timeout={300}>
             <FullOverlay>
                 <Typography variant="h2">
-                    Loading…
+                    {channelName ? `Connecting to ${channelName}…` : 'Connecting…'}
                 </Typography>
             </FullOverlay>
         </Fade>
