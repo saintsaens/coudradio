@@ -68,7 +68,7 @@ Expo Router with file-based routing. Key routes: `index.tsx` (channel list), `/c
 
 **Backend** (`.env`): `DATABASE_URL`, `MINIO_*` (endpoint, port, access/secret key, bucket), `GOOGLE_CLIENT_ID/SECRET`, `STRIPE_*`, SSL cert paths, `SESSION_SECRET`
 
-**Frontend** (`.env`): `VITE_BACKEND_URL`, `VITE_CHANNELS` (JSON array of `{name, duration, visibility}`), `VITE_CHANNELS_DEFAULT` (comma-separated, shown to unauthenticated users), `VITE_CHANNELS_LOGGEDIN` (comma-separated, shown to authenticated users), SSL cert paths
+**Frontend** (`.env`): `VITE_BACKEND_URL`, `VITE_CHANNELS_DEFAULT` (comma-separated, shown to unauthenticated users), `VITE_CHANNELS_LOGGEDIN` (comma-separated, shown to authenticated users), SSL cert paths
 
 ## Key Technical Notes
 
