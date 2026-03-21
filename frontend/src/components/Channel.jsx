@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import AudioPlayer from "./AudioPlayer";
 import { setCurrentChannel } from "../store/features/channelSwitcherSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { setError } from "../store/features/audioPlayerSlice";
 import MuteToggler from "./Commands/MuteToggler";
 import Loading from "./Loading";
 import Unavailable from "./Unavailable";
@@ -65,7 +66,7 @@ export default function Channel({ channelName }) {
     }, [dispatch, userId]);
 
     if (error) {
-        return <Unavailable />;
+        return <Unavailable onRetry={() => dispatch(setError(false))} />;
     }
 
     return (
