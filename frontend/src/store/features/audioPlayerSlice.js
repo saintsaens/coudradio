@@ -1,15 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { parseISODuration } from "../../utils/time.js";
 
 export const checkStream = createAsyncThunk(
   "audioPlayer/checkStream",
-  async (src, { dispatch, rejectWithValue }) => {
+  async (src, { rejectWithValue }) => {
     try {
-      const response = await fetch(src, { method: "HEAD" });
-      if (!response.ok) {
-        return rejectWithValue("Stream is unavailable");
-      }
+      const response = await fetch(src);
+      if (!response.ok) return rejectWithValue("Stream is unavailable");
+      const text = await response.text();
+      const doc = new DOMParser().parseFromString(text, "application/xml");
+      const iso = doc.querySelector("MPD")?.getAttribute("mediaPresentationDuration");
+      const duration = iso ? parseISODuration(iso) : null;
+      if (!duration) return rejectWithValue("Could not parse MPD duration");
+      return duration;
     } catch (error) {
-      console.error("Error fetching the audio source:", error);
+      console.error("Error fetching stream:", error);
       return rejectWithValue("Network error");
     }
   }
