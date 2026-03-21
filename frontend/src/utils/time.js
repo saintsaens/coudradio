@@ -14,3 +14,19 @@ export const parseISODuration = (iso) => {
     const seconds = parseFloat(match[3] || 0);
     return hours * 3600 + minutes * 60 + seconds;
 };
+
+export const prefetchMPDDuration = async (src) => {
+    const cacheKey = `mpd_duration:${src}`;
+    if (sessionStorage.getItem(cacheKey)) return;
+    try {
+        const response = await fetch(src);
+        if (!response.ok) return;
+        const text = await response.text();
+        const doc = new DOMParser().parseFromString(text, "application/xml");
+        const iso = doc.querySelector("MPD")?.getAttribute("mediaPresentationDuration");
+        const duration = iso ? parseISODuration(iso) : null;
+        if (duration) sessionStorage.setItem(cacheKey, duration.toString());
+    } catch {
+        // prefetch is best-effort, ignore errors
+    }
+};
