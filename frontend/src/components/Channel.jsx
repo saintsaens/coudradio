@@ -34,8 +34,23 @@ export default function Channel({ channelName }) {
 
     useEffect(() => {
         dispatch(fetchListeners());
-        const interval = setInterval(() => dispatch(fetchListeners()), 30000);
-        return () => clearInterval(interval);
+
+        let interval = setInterval(() => dispatch(fetchListeners()), 30000);
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                clearInterval(interval);
+            } else {
+                dispatch(fetchListeners());
+                interval = setInterval(() => dispatch(fetchListeners()), 30000);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [dispatch]);
 
     useEffect(() => {
