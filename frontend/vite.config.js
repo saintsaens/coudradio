@@ -33,6 +33,24 @@ export default defineConfig({
     plugins: [
         VitePWA({
             registerType: 'autoUpdate',
+            workbox: {
+                runtimeCaching: [
+                    {
+                        // Cache MPD files: matches /api/{channelName} but not /api/users/...
+                        urlPattern: new RegExp(
+                            `^${process.env.VITE_BACKEND_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/[^\\/]+$`
+                        ),
+                        handler: 'StaleWhileRevalidate',
+                        options: {
+                            cacheName: 'mpd-cache',
+                            expiration: {
+                                maxEntries: 20,
+                                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                            },
+                        },
+                    },
+                ],
+            },
             manifest: {
                 name: 'Coudradio',
                 short_name: 'Coudradio',
