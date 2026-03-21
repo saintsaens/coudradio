@@ -11,4 +11,5 @@ if (!channelName) {
 }
 
 console.log(`Creating channel: ${channelName}`);
-createChannel(channelName);
+await createChannel(channelName);
+console.log(`\nDone! Add "${channelName}" to VITE_CHANNELS_DEFAULT or VITE_CHANNELS_LOGGEDIN in frontend/.env to make it available in the frontend.`);

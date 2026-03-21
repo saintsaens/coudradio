@@ -70,9 +70,16 @@ Expo Router with file-based routing. Key routes: `index.tsx` (channel list), `/c
 
 **Frontend** (`.env`): `VITE_BACKEND_URL`, `VITE_CHANNELS_DEFAULT` (comma-separated, shown to unauthenticated users), `VITE_CHANNELS_LOGGEDIN` (comma-separated, shown to authenticated users), SSL cert paths
 
+## Creating a New Channel
+
+1. Upload audio files to a new MinIO bucket named `<channel-name>`
+2. Run `npm run create-channel <channel-name>` in `/backend` — encodes tracks with FFmpeg, builds and uploads the MPD
+3. Add `<channel-name>` to `VITE_CHANNELS_DEFAULT` (public) or `VITE_CHANNELS_LOGGEDIN` (subscribers only) in `frontend/.env`
+
 ## Key Technical Notes
 
 - Backend runs HTTPS locally (self-signed certs) and plain HTTP in production; trust proxy is enabled
 - Frontend Vite dev server proxies API calls to `https://localhost:3001`
 - Listener count is tracked via session activity timestamps; `/api/users/listeners` returns currently active sessions
 - The `shared/` directory exists but is currently empty (intended for shared utilities)
+- Playlist duration is read directly from the MPD's `mediaPresentationDuration` attribute at playback time — no need to track it manually
