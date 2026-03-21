@@ -1,9 +1,10 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 
-const FullOverlay = ({ children, sx, ...props }) => {
+const FullOverlay = React.forwardRef(({ children, sx, ...props }, ref) => {
   return (
     <Box
+      ref={ref}
       sx={{
         position: 'fixed',
         top: 0,
@@ -14,13 +15,13 @@ const FullOverlay = ({ children, sx, ...props }) => {
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'background.default',
-        ...sx, // Allow additional styles to override the default ones
+        ...sx,
       }}
       {...props}
     >
       {children}
     </Box>
   );
-};
+});
 
 export default FullOverlay;
