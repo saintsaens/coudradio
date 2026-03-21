@@ -7,7 +7,7 @@ const Loading = ({ channelName }) => {
     return (
         <Fade in timeout={300}>
             <FullOverlay>
-                <Typography variant="h2">
+                <Typography variant="h3">
                     {channelName ? `Connecting to ${channelName}…` : 'Connecting…'}
                 </Typography>
             </FullOverlay>
