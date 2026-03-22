@@ -1,4 +1,4 @@
-import { vi, test, expect, describe } from "vitest";
+import { vi, expect, describe } from "vitest";
 import db from "../../db-users/index.js";
 import {
     createFederatedCredential,

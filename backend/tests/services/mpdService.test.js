@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { addMediaPresentationDuration, extractAudioChannelConfiguration, extractMediaPresentationDuration, extractSegmentTemplateDuration, extractTimescale, getTotalPeriodsDurations } from "../../services/mpdService.js";
-import fs from "fs";
+import fs from "fs/promises";
 
-vi.mock("fs");
+vi.mock("fs/promises", () => ({
+    default: {
+        readFile: vi.fn(),
+        writeFile: vi.fn(),
+    }
+}));
 const mpdContentSingleAdaptationSet = `<?xml version="1.0" encoding="utf-8"?>
 <MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns="urn:mpeg:dash:schema:mpd:2011"
@@ -59,7 +64,7 @@ const mpdPath = 'test.mpd';
 describe('extractMediaPresentationDuration', () => {
     it('should return the media presentation duration from single AdaptationSet MPD', async () => {
         const expectedDuration = "PT2M12.0S";
-        fs.readFileSync.mockReturnValue(mpdContentSingleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentSingleAdaptationSet);
 
         const duration = await extractMediaPresentationDuration(mpdPath);
 
@@ -68,7 +73,7 @@ describe('extractMediaPresentationDuration', () => {
 
     it('should return the media presentation duration from double AdaptationSet MPD', async () => {
         const expectedDuration = "PT0.0S"
-        fs.readFileSync.mockReturnValue(mpdContentDoubleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentDoubleAdaptationSet);
 
         const duration = await extractMediaPresentationDuration(mpdPath);
 
@@ -79,7 +84,7 @@ describe('extractMediaPresentationDuration', () => {
 describe("extractTimescale", () => {
     it("should return the timescale from a single AdaptationSet MPD", async () => {
         const expectedTimescale = "1000000";
-        fs.readFileSync.mockReturnValue(mpdContentSingleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentSingleAdaptationSet);
 
         const timescale = await extractTimescale(mpdPath);
 
@@ -88,7 +93,7 @@ describe("extractTimescale", () => {
 
     it("should return the timescale from a double AdaptationSet MPD", async () => {
         const expectedTimescale = "1000000";
-        fs.readFileSync.mockReturnValue(mpdContentDoubleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentDoubleAdaptationSet);
 
         const timescale = await extractTimescale(mpdPath);
 
@@ -99,7 +104,7 @@ describe("extractTimescale", () => {
 describe("extractSegmentTemplateDuration", () => {
     it("should return the duration from a single AdaptationSet MPD", async () => {
         const expectedDuration = "5000000";
-        fs.readFileSync.mockReturnValue(mpdContentSingleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentSingleAdaptationSet);
 
         const duration = await extractSegmentTemplateDuration(mpdPath);
 
@@ -108,7 +113,7 @@ describe("extractSegmentTemplateDuration", () => {
 
     it("should return the duration from a double AdaptationSet MPD", async () => {
         const expectedDuration = "5000000";
-        fs.readFileSync.mockReturnValue(mpdContentDoubleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentDoubleAdaptationSet);
 
         const duration = await extractSegmentTemplateDuration(mpdPath);
 
@@ -119,7 +124,7 @@ describe("extractSegmentTemplateDuration", () => {
 describe("extractAudioChannelConfiguration", () => {
     it("should return the AudioChannelConfiguration from a single AdaptationSet MPD", async () => {
         const expectedAudioChannelConfiguration = `<AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />`;
-        fs.readFileSync.mockReturnValue(mpdContentSingleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentSingleAdaptationSet);
 
         const audioChannelConfiguration = await extractAudioChannelConfiguration(mpdPath);
 
@@ -128,7 +133,7 @@ describe("extractAudioChannelConfiguration", () => {
 
     it("should return the AudioChannelConfiguration from a double AdaptationSet MPD", async () => {
         const expectedAudioChannelConfiguration = `<AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2" />`;
-        fs.readFileSync.mockReturnValue(mpdContentDoubleAdaptationSet);
+        fs.readFile.mockResolvedValue(mpdContentDoubleAdaptationSet);
 
         const audioChannelConfiguration = await extractAudioChannelConfiguration(mpdPath);
 
@@ -167,7 +172,7 @@ describe("getTotalPeriodsDurations", () => {
         </AdaptationSet>
       </Period>
     </MPD>`;
-        fs.readFileSync.mockReturnValue(mpdContent);
+        fs.readFile.mockResolvedValue(mpdContent);
 
         const duration = await getTotalPeriodsDurations(mpdPath);
 
@@ -236,7 +241,8 @@ describe("addMediaPresentationDuration", () => {
       </Period>
     </MPD>`;
 
-        fs.readFileSync.mockReturnValue(initialMpdContent);
+        fs.readFile.mockResolvedValue(initialMpdContent);
+        fs.writeFile.mockResolvedValue(undefined);
 
         const result = await addMediaPresentationDuration(mpdPath, mediaPresentationDuration);
 

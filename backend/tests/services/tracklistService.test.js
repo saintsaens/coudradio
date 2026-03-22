@@ -27,7 +27,7 @@ describe("getTracklist", () => {
 
         expect(trackRepository.getTracks).toHaveBeenCalledWith(mockChannel);
         expect(trackRepository.getTrackUrl).toHaveBeenCalledTimes(mockTracks.length);
-        mockTracks.forEach((track, index) => {
+        mockTracks.forEach((track, _index) => {
             expect(trackRepository.getTrackUrl).toHaveBeenCalledWith(
                 mockChannel,
                 track
@@ -36,14 +36,15 @@ describe("getTracklist", () => {
         expect(result).toEqual(mockTrackUrls);
     });
 
-    it("should return an empty array if there are no tracks", async () => {
+    it("should throw if there are no tracks for the channel", async () => {
         trackRepository.getTracks.mockResolvedValue([]);
 
-        const result = await getTracklist(mockChannel);
+        await expect(getTracklist(mockChannel)).rejects.toThrow(
+            `No tracks found for channel: ${mockChannel}`
+        );
 
         expect(trackRepository.getTracks).toHaveBeenCalledWith(mockChannel);
         expect(trackRepository.getTrackUrl).not.toHaveBeenCalled();
-        expect(result).toEqual([]);
     });
 
     it("should propagate errors from getTracks", async () => {
