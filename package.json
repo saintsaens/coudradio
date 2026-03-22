@@ -1,0 +1,15 @@
+{
+  "name": "coudradio-root",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "backend/**/*.{js,jsx,ts,tsx}": "eslint --fix",
+    "frontend/**/*.{js,jsx}": "eslint --fix"
+  }
+}
