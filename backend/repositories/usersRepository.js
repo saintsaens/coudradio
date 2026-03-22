@@ -18,7 +18,7 @@ export const createUser = async (username, hashedPw, role, sessionStartTime, las
 
 export const getUserById = async (id) => {
     const query = `
-        SELECT id, username, role, session_start_time, last_activity_time, time_spent, subscribed, email
+        SELECT id, username, role, session_start_time, last_activity_time, time_spent, subscribed, email, stripe_customer_id
         FROM ${tableName}
         WHERE id = $1;
     `;
@@ -26,7 +26,17 @@ export const getUserById = async (id) => {
     return rows[0];
 };
 
-export const updateUser = async (id, { username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email }) => {
+export const getUserByStripeCustomerId = async (stripeCustomerId) => {
+    const query = `
+        SELECT id, username, role, session_start_time, last_activity_time, time_spent, subscribed, email, stripe_customer_id
+        FROM ${tableName}
+        WHERE stripe_customer_id = $1;
+    `;
+    const { rows } = await db.query(query, [stripeCustomerId]);
+    return rows[0];
+};
+
+export const updateUser = async (id, { username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email, stripeCustomerId }) => {
     const query = `
         UPDATE ${tableName}
         SET
@@ -37,11 +47,12 @@ export const updateUser = async (id, { username, hashedPw, role, sessionStartTim
             last_activity_time = COALESCE($5, last_activity_time),
             time_spent = COALESCE($6, time_spent),
             subscribed = COALESCE($7, subscribed),
-            email = COALESCE($8, email)
-        WHERE id = $9
-        RETURNING id, username, role, session_start_time, last_activity_time, time_spent, subscribed, email;
+            email = COALESCE($8, email),
+            stripe_customer_id = COALESCE($9, stripe_customer_id)
+        WHERE id = $10
+        RETURNING id, username, role, session_start_time, last_activity_time, time_spent, subscribed, email, stripe_customer_id;
     `;
-    const { rows } = await db.query(query, [username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email, id]);
+    const { rows } = await db.query(query, [username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email, stripeCustomerId, id]);
     return rows[0];
 };
 

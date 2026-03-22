@@ -1,4 +1,4 @@
-import { handleSuccessfulSessionCheckout } from "../services/stripeService.js";
+import { handleSuccessfulSessionCheckout, handleSubscriptionCancellation } from "../services/stripeService.js";
 import stripe from "../stripe/index.js";
 
 export const webhook = async (request, response) => {
@@ -22,8 +22,16 @@ export const webhook = async (request, response) => {
         case 'checkout.session.completed': {
             const session = event.data.object;
             const userId = session.client_reference_id;
+            const stripeCustomerId = session.customer;
             console.log(`User ${userId} paid successfully!`);
-            handleSuccessfulSessionCheckout(userId);
+            await handleSuccessfulSessionCheckout(userId, stripeCustomerId);
+            break;
+        }
+        case 'customer.subscription.deleted': {
+            const subscription = event.data.object;
+            const stripeCustomerId = subscription.customer;
+            console.log(`Subscription cancelled for Stripe customer ${stripeCustomerId}`);
+            await handleSubscriptionCancellation(stripeCustomerId);
             break;
         }
         default:

@@ -15,6 +15,7 @@ describe('webhook', () => {
 
     beforeEach(() => {
         delete process.env.STRIPE_WEBHOOK_SIGNING_SECRET;
+        vi.clearAllMocks();
         req = { body: {}, headers: {} };
         res = {
             send: vi.fn(),
@@ -54,7 +55,7 @@ describe('webhook', () => {
         expect(res.sendStatus).toHaveBeenCalledWith(400);
     });
 
-    it('sends 200 for unknown event types without calling handleSuccessfulSessionCheckout', async () => {
+    it('sends 200 for unknown event types without calling any service', async () => {
         process.env.STRIPE_WEBHOOK_SIGNING_SECRET = 'test-secret';
         const constructedEvent = { type: 'refund.created', data: { object: {} } };
         vi.mocked(stripe.webhooks.constructEvent).mockReturnValue(constructedEvent);
@@ -64,6 +65,39 @@ describe('webhook', () => {
         await webhook(req, res);
 
         expect(stripeService.handleSuccessfulSessionCheckout).not.toHaveBeenCalled();
+        expect(stripeService.handleSubscriptionCancellation).not.toHaveBeenCalled();
+        expect(res.send).toHaveBeenCalled();
+    });
+
+    it('calls handleSuccessfulSessionCheckout with userId and stripeCustomerId on checkout.session.completed', async () => {
+        process.env.STRIPE_WEBHOOK_SIGNING_SECRET = 'test-secret';
+        const constructedEvent = {
+            type: 'checkout.session.completed',
+            data: { object: { client_reference_id: '7', customer: 'cus_123' } },
+        };
+        vi.mocked(stripe.webhooks.constructEvent).mockReturnValue(constructedEvent);
+        vi.mocked(stripeService.handleSuccessfulSessionCheckout).mockResolvedValue({});
+        req.headers['stripe-signature'] = 'valid-sig';
+
+        await webhook(req, res);
+
+        expect(stripeService.handleSuccessfulSessionCheckout).toHaveBeenCalledWith('7', 'cus_123');
+        expect(res.send).toHaveBeenCalled();
+    });
+
+    it('calls handleSubscriptionCancellation with stripeCustomerId on customer.subscription.deleted', async () => {
+        process.env.STRIPE_WEBHOOK_SIGNING_SECRET = 'test-secret';
+        const constructedEvent = {
+            type: 'customer.subscription.deleted',
+            data: { object: { customer: 'cus_abc' } },
+        };
+        vi.mocked(stripe.webhooks.constructEvent).mockReturnValue(constructedEvent);
+        vi.mocked(stripeService.handleSubscriptionCancellation).mockResolvedValue({});
+        req.headers['stripe-signature'] = 'valid-sig';
+
+        await webhook(req, res);
+
+        expect(stripeService.handleSubscriptionCancellation).toHaveBeenCalledWith('cus_abc');
         expect(res.send).toHaveBeenCalled();
     });
 });
