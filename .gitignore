@@ -10,3 +10,5 @@
 !frontend/public
 **/progress
 **/*.pem
+tmp/
+downloads/
