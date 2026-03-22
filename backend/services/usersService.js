@@ -1,5 +1,6 @@
 import * as usersRepository from "../repositories/usersRepository.js"
 import { getRecentConnectionCount } from "../loaders/connectionTracker.js"
+import { NotFoundError } from "../errors.js"
 
 export const createUserWithoutPassword = async (username, email) => {
     if (!username || !email) {
@@ -55,7 +56,7 @@ export const getListenerCounts = async () => {
 export const getUserRankAndTotal = async (id) => {
     const result = await usersRepository.getUserRankAndTotal(id);
     if (!result) {
-        throw new Error("User not found");
+        throw new NotFoundError("User not found");
     }
     return result;
 };

@@ -10,7 +10,7 @@ vi.mock('../../services/metadataService.js', () => ({
 }));
 
 describe('getMetadata', () => {
-    let req, res;
+    let req, res, next;
 
     beforeEach(() => {
         req = {};
@@ -18,31 +18,31 @@ describe('getMetadata', () => {
             status: vi.fn().mockReturnThis(),
             json: vi.fn(),
         };
+        next = vi.fn();
     });
 
     it('returns the track metadata as JSON', async () => {
         const mockMetadata = { name: 'Chill Beats', artist: 'Lo-Fi DJ' };
         vi.mocked(metadataService.getTrackMetadata).mockReturnValue(mockMetadata);
 
-        await getMetadata(req, res);
+        await getMetadata(req, res, next);
 
         expect(res.json).toHaveBeenCalledWith(mockMetadata);
     });
 
-    it('returns 500 with the error message if the service throws', async () => {
+    it('calls next with an error if the service throws', async () => {
         vi.mocked(metadataService.getTrackMetadata).mockImplementation(() => {
             throw new Error('metadata unavailable');
         });
 
-        await getMetadata(req, res);
+        await getMetadata(req, res, next);
 
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: 'metadata unavailable' });
+        expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
 });
 
 describe('updateMetadata', () => {
-    let req, res;
+    let req, res, next;
 
     beforeEach(() => {
         req = {};
@@ -50,25 +50,25 @@ describe('updateMetadata', () => {
             status: vi.fn().mockReturnThis(),
             json: vi.fn(),
         };
+        next = vi.fn();
     });
 
     it('returns the updated metadata as JSON', async () => {
         const mockMetadata = { name: 'Jazz Vibes', artist: 'Smooth Cat' };
         vi.mocked(metadataService.updateTrackMetadata).mockReturnValue(mockMetadata);
 
-        await updateMetadata(req, res);
+        await updateMetadata(req, res, next);
 
         expect(res.json).toHaveBeenCalledWith(mockMetadata);
     });
 
-    it('returns 500 with the error message if the service throws', async () => {
+    it('calls next with an error if the service throws', async () => {
         vi.mocked(metadataService.updateTrackMetadata).mockImplementation(() => {
             throw new Error('update failed');
         });
 
-        await updateMetadata(req, res);
+        await updateMetadata(req, res, next);
 
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: 'update failed' });
+        expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
 });

@@ -1,7 +1,7 @@
 import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
 
-export const updateUserActivity = async (req, res) => {
+export const updateUserActivity = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const lastActivityTime = new Date();
@@ -24,12 +24,11 @@ export const updateUserActivity = async (req, res) => {
             user: updatedUser
         });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };
 
-export const updateSessionStartTime = async (req, res) => {
+export const updateSessionStartTime = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const lastActivityTime = new Date();
@@ -45,34 +44,25 @@ export const updateSessionStartTime = async (req, res) => {
 
         return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };
 
-export const getListeners = async (req, res) => {
+export const getListeners = async (req, res, next) => {
     try {
         const counts = await usersService.getListenerCounts();
         return res.status(200).json(counts);
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };
 
-export const getUserRank = async (req, res) => {
+export const getUserRank = async (req, res, next) => {
     const { id } = req.params;
-
     try {
-        // const userId = req.user.id;
         const result = await usersService.getUserRankAndTotal(id);
-
-        return res.status(200).json({
-            rank: result.rank,
-            total: result.total
-        });
+        return res.status(200).json({ rank: result.rank, total: result.total });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };

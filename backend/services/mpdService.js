@@ -20,24 +20,19 @@ export const extractTimescale = async (mpdPath) => {
         mergeAttrs: true,
     };
 
-    try {
-        const result = await xml2js.parseStringPromise(data, options);
-        const adaptationSet = result['MPD']?.['Period']?.['AdaptationSet'];
-        let timescale = "";
-        if (Array.isArray(adaptationSet)) {
-            timescale = result['MPD']?.['Period']?.['AdaptationSet'][0]?.['Representation']?.['SegmentTemplate'].timescale;
-        } else {
-            timescale = result['MPD']?.['Period']?.['AdaptationSet']?.['Representation']?.['SegmentTemplate'].timescale;
-        }
-
-        if (timescale === "") {
-            throw new Error(`timescale not found in ${mpdPath}`);
-        }
-        return timescale;
-    } catch (error) {
-        console.error('Error parsing XML:', error.message);
-        throw error;
+    const result = await xml2js.parseStringPromise(data, options);
+    const adaptationSet = result['MPD']?.['Period']?.['AdaptationSet'];
+    let timescale = "";
+    if (Array.isArray(adaptationSet)) {
+        timescale = result['MPD']?.['Period']?.['AdaptationSet'][0]?.['Representation']?.['SegmentTemplate'].timescale;
+    } else {
+        timescale = result['MPD']?.['Period']?.['AdaptationSet']?.['Representation']?.['SegmentTemplate'].timescale;
     }
+
+    if (timescale === "") {
+        throw new Error(`timescale not found in ${mpdPath}`);
+    }
+    return timescale;
 };
 
 export const extractSegmentTemplateDuration = async (mpdPath) => {
@@ -46,24 +41,19 @@ export const extractSegmentTemplateDuration = async (mpdPath) => {
         explicitArray: false,
         mergeAttrs: true,
     };
-    try {
-        const result = await xml2js.parseStringPromise(data, options);
-        const adaptationSet = result['MPD']?.['Period']?.['AdaptationSet'];
-        let duration = "";
-        if (Array.isArray(adaptationSet)) {
-            duration = result['MPD']?.['Period']?.['AdaptationSet'][0]?.['Representation']?.['SegmentTemplate'].duration;
-        } else {
-            duration = result['MPD']?.['Period']?.['AdaptationSet']?.['Representation']?.['SegmentTemplate'].duration;
-        }
-
-        if (duration === "") {
-            throw new Error(`duration not found in ${mpdPath}`);
-        }
-        return duration;
-    } catch (error) {
-        console.error('Error parsing XML:', error.message);
-        throw error;
+    const result = await xml2js.parseStringPromise(data, options);
+    const adaptationSet = result['MPD']?.['Period']?.['AdaptationSet'];
+    let duration = "";
+    if (Array.isArray(adaptationSet)) {
+        duration = result['MPD']?.['Period']?.['AdaptationSet'][0]?.['Representation']?.['SegmentTemplate'].duration;
+    } else {
+        duration = result['MPD']?.['Period']?.['AdaptationSet']?.['Representation']?.['SegmentTemplate'].duration;
     }
+
+    if (duration === "") {
+        throw new Error(`duration not found in ${mpdPath}`);
+    }
+    return duration;
 };
 
 export const extractAudioChannelConfiguration = async (mpdPath) => {
@@ -72,28 +62,23 @@ export const extractAudioChannelConfiguration = async (mpdPath) => {
         explicitArray: false,  // Avoid wrapping tags in arrays if there's only one occurrence
         mergeAttrs: true,      // Merge attributes into the tag object
     };
-    try {
-        const result = await xml2js.parseStringPromise(data, options);
-        const adaptationSet = result['MPD']?.['Period']?.['AdaptationSet'];
-        let audioChannelConfiguration = "";
-        if (Array.isArray(adaptationSet)) {
-            audioChannelConfiguration = result['MPD']?.['Period']?.['AdaptationSet'][1]?.['Representation']?.['AudioChannelConfiguration'];
-        } else {
-            audioChannelConfiguration = result['MPD']?.['Period']?.['AdaptationSet']?.['Representation']?.['AudioChannelConfiguration'];
-        }
-        if (audioChannelConfiguration === "" || !audioChannelConfiguration) {
-            throw new Error(`AudioChannelConfiguration not found in ${mpdPath}`);
-        }
-        const schemeIdUri = audioChannelConfiguration['schemeIdUri'];
-        const value = audioChannelConfiguration['value'];
-        if (!schemeIdUri || !value) {
-            throw new Error('Required attributes (schemeIdUri, value) missing from AudioChannelConfiguration.');
-        }
-        return `<AudioChannelConfiguration schemeIdUri="${schemeIdUri}" value="${value}" />`;
-    } catch (error) {
-        console.error(`Error parsing ${mpdPath}:`, error.message);
-        throw error;
+    const result = await xml2js.parseStringPromise(data, options);
+    const adaptationSet = result['MPD']?.['Period']?.['AdaptationSet'];
+    let audioChannelConfiguration = "";
+    if (Array.isArray(adaptationSet)) {
+        audioChannelConfiguration = result['MPD']?.['Period']?.['AdaptationSet'][1]?.['Representation']?.['AudioChannelConfiguration'];
+    } else {
+        audioChannelConfiguration = result['MPD']?.['Period']?.['AdaptationSet']?.['Representation']?.['AudioChannelConfiguration'];
     }
+    if (audioChannelConfiguration === "" || !audioChannelConfiguration) {
+        throw new Error(`AudioChannelConfiguration not found in ${mpdPath}`);
+    }
+    const schemeIdUri = audioChannelConfiguration['schemeIdUri'];
+    const value = audioChannelConfiguration['value'];
+    if (!schemeIdUri || !value) {
+        throw new Error('Required attributes (schemeIdUri, value) missing from AudioChannelConfiguration.');
+    }
+    return `<AudioChannelConfiguration schemeIdUri="${schemeIdUri}" value="${value}" />`;
 };
 
 export const createLocalMpd = (channel) => {
@@ -251,24 +236,19 @@ export const getTotalPeriodsDurations = async (mpdPath) => {
         explicitArray: false,
         mergeAttrs: true,
     };
-    try {
-        const result = await xml2js.parseStringPromise(data, options);
-        // Extract all Period durations from the MPD content
-        const periods = Array.isArray(result.MPD.Period) ? result.MPD.Period : [result.MPD.Period];
-        let totalSeconds = 0;
+    const result = await xml2js.parseStringPromise(data, options);
+    // Extract all Period durations from the MPD content
+    const periods = Array.isArray(result.MPD.Period) ? result.MPD.Period : [result.MPD.Period];
+    let totalSeconds = 0;
 
-        // Convert ISO 8601 durations (e.g., PT1H2M53.1S) to total seconds
-        periods.forEach((period) => {
-            const duration = period.duration;
-            totalSeconds += iso8601DurationToSeconds(duration);
-        });
+    // Convert ISO 8601 durations (e.g., PT1H2M53.1S) to total seconds
+    periods.forEach((period) => {
+        const duration = period.duration;
+        totalSeconds += iso8601DurationToSeconds(duration);
+    });
 
-        // Convert total seconds back to ISO 8601 duration format
-        return secondsToIso8601Duration(totalSeconds);
-    } catch (error) {
-        console.error('Error parsing XML:', error.message);
-        throw error;
-    }
+    // Convert total seconds back to ISO 8601 duration format
+    return secondsToIso8601Duration(totalSeconds);
 };
 
 // Helper function to convert ISO 8601 duration string to total seconds

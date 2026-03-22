@@ -7,7 +7,7 @@ vi.mock('../../services/usersService.js');
 
 describe('User Controller Tests', () => {
 
-    let req, res;
+    let req, res, next;
 
     beforeEach(() => {
         req = {
@@ -18,6 +18,7 @@ describe('User Controller Tests', () => {
             status: vi.fn().mockReturnThis(),
             json: vi.fn().mockReturnThis(),
         };
+        next = vi.fn();
     });
 
     describe('updateUserActivity', () => {
@@ -26,7 +27,7 @@ describe('User Controller Tests', () => {
             req.user = { id: 1, lastActivity: new Date(), timeSpent: 0 };
             usersService.updateUser.mockResolvedValue(mockUpdatedUser);
 
-            await updateUserActivity(req, res);
+            await updateUserActivity(req, res, next);
 
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -39,20 +40,19 @@ describe('User Controller Tests', () => {
             req.user = { id: 99, lastActivity: new Date(), timeSpent: 0 };
             usersService.updateUser.mockResolvedValue(null);
 
-            await updateUserActivity(req, res);
+            await updateUserActivity(req, res, next);
 
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
         });
 
-        test('should return 500 on service error', async () => {
+        test('calls next with an error on service error', async () => {
             req.user = { id: 1, lastActivity: new Date(), timeSpent: 0 };
             usersService.updateUser.mockRejectedValue(new Error('DB error'));
 
-            await updateUserActivity(req, res);
+            await updateUserActivity(req, res, next);
 
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+            expect(next).toHaveBeenCalledWith(expect.any(Error));
         });
     });
 
@@ -61,7 +61,7 @@ describe('User Controller Tests', () => {
             req.user = { id: 1, lastActivity: null, sessionStartTime: null };
             usersService.updateUser.mockResolvedValue({ id: 1 });
 
-            await updateSessionStartTime(req, res);
+            await updateSessionStartTime(req, res, next);
 
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -73,7 +73,7 @@ describe('User Controller Tests', () => {
             req.user = { id: 99, lastActivity: null, sessionStartTime: null };
             usersService.updateUser.mockResolvedValue(null);
 
-            await updateSessionStartTime(req, res);
+            await updateSessionStartTime(req, res, next);
 
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
@@ -85,19 +85,18 @@ describe('User Controller Tests', () => {
             const mockCounts = { authenticated: 3, anonymous: 5 };
             usersService.getListenerCounts.mockResolvedValue(mockCounts);
 
-            await getListeners(req, res);
+            await getListeners(req, res, next);
 
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith(mockCounts);
         });
 
-        test('should return 500 on service error', async () => {
+        test('calls next with an error on service error', async () => {
             usersService.getListenerCounts.mockRejectedValue(new Error('count error'));
 
-            await getListeners(req, res);
+            await getListeners(req, res, next);
 
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+            expect(next).toHaveBeenCalledWith(expect.any(Error));
         });
     });
 
@@ -106,20 +105,19 @@ describe('User Controller Tests', () => {
             req.params.id = '1';
             usersService.getUserRankAndTotal.mockResolvedValue({ rank: 2, total: 10 });
 
-            await getUserRank(req, res);
+            await getUserRank(req, res, next);
 
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({ rank: 2, total: 10 });
         });
 
-        test('should return 500 on service error', async () => {
+        test('calls next with an error on service error', async () => {
             req.params.id = '1';
             usersService.getUserRankAndTotal.mockRejectedValue(new Error('User not found'));
 
-            await getUserRank(req, res);
+            await getUserRank(req, res, next);
 
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+            expect(next).toHaveBeenCalledWith(expect.any(Error));
         });
     });
 
