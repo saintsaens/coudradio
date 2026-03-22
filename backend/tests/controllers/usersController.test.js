@@ -1,6 +1,6 @@
 import { vi, test, expect, describe, beforeEach } from 'vitest';
 import * as usersService from "../../services/usersService.js";
-import { updateUser, deleteUser, getUserById, updateUserActivity, updateSessionStartTime, getListeners, getUserRank } from "../../controllers/usersController.js";
+import { deleteUser, getUserById, updateUserActivity, updateSessionStartTime, getListeners, getUserRank } from "../../controllers/usersController.js";
 
 // Mocks for the usersService functions
 vi.mock('../../services/usersService.js');
@@ -18,53 +18,6 @@ describe('User Controller Tests', () => {
             status: vi.fn().mockReturnThis(),
             json: vi.fn().mockReturnThis(),
         };
-    });
-
-    describe('updateUser', () => {
-        test('should return 400 if no username or password provided', async () => {
-            req.params.id = '1';
-            req.body = {}; // Empty request body
-            await updateUser(req, res);
-            expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: 'At least one field must be provided' });
-        });
-
-        test('should return 200 if user is successfully updated', async () => {
-            req.params.id = '1';
-            req.body = { username: 'updatedUser', password: 'newPassword123' };
-            const mockUpdatedUser = { id: '1', username: 'updatedUser' };
-            usersService.updateUser.mockResolvedValue(mockUpdatedUser);
-
-            await updateUser(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'User updated successfully',
-                user: mockUpdatedUser,
-            });
-        });
-
-        test('should return 404 if user is not found', async () => {
-            req.params.id = '999'; // Non-existing user ID
-            req.body = { username: 'updatedUser' };
-            usersService.updateUser.mockResolvedValue(null);
-
-            await updateUser(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
-        });
-
-        test('should return 500 on internal server error', async () => {
-            req.params.id = '1';
-            req.body = { username: 'updatedUser' };
-            usersService.updateUser.mockRejectedValue(new Error('Error updating user'));
-
-            await updateUser(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
-        });
     });
 
     describe('deleteUser', () => {

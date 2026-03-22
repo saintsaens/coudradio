@@ -1,28 +1,6 @@
 import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
 
-export const updateUser = async (req, res) => {
-    const { id } = req.params;
-    const { username, password, role, sessionStartTime, lastActivity, email } = req.body;
-
-    if (!username && !password && !role && !sessionStartTime && !lastActivity && !email) {
-        return res.status(400).json({ error: "At least one field must be provided" });
-    }
-
-    try {
-        const updatedUser = await usersService.updateUser(id, { username, password, role, sessionStartTime, lastActivity, email });
-
-        if (!updatedUser) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        return res.status(200).json({ message: "User updated successfully", user: updatedUser });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
-    }
-};
-
 export const updateUserActivity = async (req, res) => {
     if (req.isAuthenticated()) {
         try {
