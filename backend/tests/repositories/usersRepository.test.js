@@ -1,6 +1,6 @@
 import { vi, expect } from "vitest";
 import db from "../../db-users/index.js";
-import { createUser, getUserById, updateUser, deleteUser, addTimeSpent, getActiveAuthenticatedCount, getUserRankAndTotal } from "../../repositories/usersRepository.js";
+import { createUser, getUserById, updateUser, addTimeSpent, getActiveAuthenticatedCount, getUserRankAndTotal } from "../../repositories/usersRepository.js";
 
 const mockUser = {
   id: 1,
@@ -96,16 +96,6 @@ describe("updateUser", () => {
     const result = await updateUser(userId, { sessionStartTime: "2025-03-10T10:00:00Z" });
 
     expect(result).toEqual(updatedUser);
-  });
-});
-
-describe("deleteUser", () => {
-  it("should delete a user and return its former data with session info", async () => {
-    vi.mocked(db.query).mockResolvedValueOnce({ rows: [mockUser] });
-
-    const result = await deleteUser(1);
-
-    expect(result).toEqual(mockUser);
   });
 });
 

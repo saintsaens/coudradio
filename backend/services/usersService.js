@@ -45,12 +45,6 @@ export const addTimeSpent = async (id, timeToAdd) => {
     return result;
 };
 
-export const deleteUser = async (id) => {
-    const result = await usersRepository.deleteUser(id);
-
-    return result;
-};
-
 export const getListenerCounts = async () => {
     const authenticated = await usersRepository.getActiveAuthenticatedCount();
     const total = getRecentConnectionCount();

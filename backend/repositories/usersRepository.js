@@ -67,16 +67,6 @@ export const addTimeSpent = async (id, timeToAdd) => {
     return rows[0];
 };
 
-export const deleteUser = async (id) => {
-    const query = `
-        DELETE FROM ${tableName}
-        WHERE id = $1
-        RETURNING id, username, role, session_start_time, last_activity_time, time_spent, subscribed, email;
-    `;
-    const { rows } = await db.query(query, [id]);
-    return rows[0];
-};
-
 export const getActiveAuthenticatedCount = async () => {
     const query = `
         SELECT COUNT(*) AS count

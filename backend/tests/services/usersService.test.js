@@ -1,14 +1,12 @@
 import { vi, expect } from "vitest";
 import * as usersRepository from "../../repositories/usersRepository.js";
 import * as connectionTracker from "../../loaders/connectionTracker.js";
-import { getUserById, updateUser, deleteUser, createUserWithoutPassword, addTimeSpent, getListenerCounts, getUserRankAndTotal } from "../../services/usersService.js";
+import { getUserById, updateUser, createUserWithoutPassword, addTimeSpent, getListenerCounts, getUserRankAndTotal } from "../../services/usersService.js";
 
-// Mock usersRepository and bcrypt
 vi.mock("../../repositories/usersRepository.js", () => ({
   createUser: vi.fn(),
   getUserById: vi.fn(),
   updateUser: vi.fn(),
-  deleteUser: vi.fn(),
   addTimeSpent: vi.fn(),
   getActiveAuthenticatedCount: vi.fn(),
   getUserRankAndTotal: vi.fn(),
@@ -48,18 +46,6 @@ describe("updateUser", () => {
       sessionStartTime: "2025-02-10T10:00:00Z",
       lastActivityTime: "2025-02-10T10:00:00Z",
     });
-    expect(result).toEqual(mockUser);
-  });
-});
-
-describe("deleteUser", () => {
-  it("should remove a user and return its former properties", async () => {
-    const mockUser = { id: 1, username: "deleteduser" };
-    usersRepository.deleteUser.mockResolvedValueOnce(mockUser);
-
-    const result = await deleteUser(1);
-
-    expect(usersRepository.deleteUser).toHaveBeenCalledWith(1);
     expect(result).toEqual(mockUser);
   });
 });
