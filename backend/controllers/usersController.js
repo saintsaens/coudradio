@@ -1,22 +1,6 @@
 import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
 
-export const createUser = async (req, res) => {
-    const { username, password, email } = req.body;
-
-    if (!username || !password || !email) {
-        return res.status(400).json({ error: "Missing fields" });
-    }
-
-    try {
-        const newUser = await usersService.createUser(username, password, email);
-        return res.status(201).json({ message: "User created successfully", user: newUser });
-    } catch (err) {
-        console.error(err);  // Log the error for debugging
-        return res.status(500).json({ error: "Internal server error" });
-    }
-};
-
 export const updateUser = async (req, res) => {
     const { id } = req.params;
     const { username, password, role, sessionStartTime, lastActivity, email } = req.body;

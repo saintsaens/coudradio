@@ -1,6 +1,6 @@
 import { vi, test, expect, describe, beforeEach } from 'vitest';
 import * as usersService from "../../services/usersService.js";
-import { createUser, updateUser, deleteUser, getUserById, updateUserActivity, updateSessionStartTime, getListeners, getUserRank } from "../../controllers/usersController.js";
+import { updateUser, deleteUser, getUserById, updateUserActivity, updateSessionStartTime, getListeners, getUserRank } from "../../controllers/usersController.js";
 
 // Mocks for the usersService functions
 vi.mock('../../services/usersService.js');
@@ -18,39 +18,6 @@ describe('User Controller Tests', () => {
             status: vi.fn().mockReturnThis(),
             json: vi.fn().mockReturnThis(),
         };
-    });
-
-    describe('createUser', () => {
-        test('should return 400 if missing username, password or email', async () => {
-            req.body = {}; // Empty request body
-            await createUser(req, res);
-            expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Missing fields' });
-        });
-
-        test('should return 201 on successful user creation', async () => {
-            req.body = { username: 'testuser', password: 'password123', email: "test@test.com" };
-            const mockUser = { id: 1, username: 'testuser', email: "test@test.com" };
-            usersService.createUser.mockResolvedValue(mockUser);
-
-            await createUser(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(201);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'User created successfully',
-                user: mockUser,
-            });
-        });
-
-        test('should return 500 if there is an internal server error', async () => {
-            req.body = { username: 'testuser', password: 'password123', email: "test@test.com" };
-            usersService.createUser.mockRejectedValue(new Error('Error creating user'));
-
-            await createUser(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
-        });
     });
 
     describe('updateUser', () => {
