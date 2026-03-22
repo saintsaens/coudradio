@@ -8,9 +8,8 @@ export const uploadSegment = async (segmentPath, channel) => {
     }
 
     const segmentName = path.basename(segmentPath);
-    const uploadedSegmentName = await segmentsRepository.uploadSegment(segmentPath, segmentName, channel);
-
-    return uploadedSegmentName;
+    const objectName = `${process.env.MINIO_SEGMENTS_PATH}/${channel}/${segmentName}`;
+    return segmentsRepository.putSegmentObject(objectName, segmentPath);
 };
 
 export const getSegmentStream = async (channelName, segmentName) => {

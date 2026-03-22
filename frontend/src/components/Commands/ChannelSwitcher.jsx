@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setSelectedIndex, closeSwitcher, toggleSwitcher } from "../../store/features/channelSwitcherSlice";
+import { prefetchMPDDuration } from "../../utils/time.js";
 import { Modal, Box, List, ListItem, ListItemButton, ListItemText, InputBase } from "@mui/material";
 
 const ChannelSwitcher = () => {
@@ -9,6 +10,7 @@ const ChannelSwitcher = () => {
     const { channelList } = useSelector((state) => state.user);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -54,6 +56,12 @@ const ChannelSwitcher = () => {
     };
 
     useEffect(() => {
+        const item = filteredItems[selectedIndex];
+        if (item) prefetchMPDDuration(`${backendUrl}/${item}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedIndex, filteredItems]);
+
+    useEffect(() => {
         document.addEventListener('keydown', handleKeyPress);
 
         if (!isSwitcherOpen) {
@@ -67,6 +75,7 @@ const ChannelSwitcher = () => {
         return () => {
             document.removeEventListener('keydown', handleKeyPress);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isSwitcherOpen, filteredItems]);
 
     return (
@@ -79,9 +88,9 @@ const ChannelSwitcher = () => {
             <Box
                 sx={{
                     position: 'absolute',
-                    top: '50%',
+                    top: '30%',
                     left: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    transform: 'translateX(-50%)',
                     width: 500,
                     bgcolor: 'var(--third-color)',
                     boxShadow: 24,

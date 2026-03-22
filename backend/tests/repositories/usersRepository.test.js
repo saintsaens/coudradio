@@ -1,6 +1,6 @@
-import { vi, test, expect } from "vitest";
+import { vi, expect } from "vitest";
 import db from "../../db-users/index.js";
-import { createUser, getUserById, updateUser, deleteUser } from "../../repositories/usersRepository.js";
+import { createUser, getUserById, updateUser, deleteUser, addTimeSpent, getActiveAuthenticatedCount, getUserRankAndTotal } from "../../repositories/usersRepository.js";
 
 const mockUser = {
   id: 1,
@@ -106,5 +106,39 @@ describe("deleteUser", () => {
     const result = await deleteUser(1);
 
     expect(result).toEqual(mockUser);
+  });
+});
+
+describe("addTimeSpent", () => {
+  it("returns the updated user with the incremented time_spent", async () => {
+    const updatedUser = { ...mockUser, time_spent: 25 };
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [updatedUser] });
+
+    const result = await addTimeSpent(1, 15);
+
+    expect(db.query).toHaveBeenCalledWith(expect.stringContaining('time_spent'), [15, 1]);
+    expect(result).toEqual(updatedUser);
+  });
+});
+
+describe("getActiveAuthenticatedCount", () => {
+  it("returns the number of recently active users as an integer", async () => {
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [{ count: '5' }] });
+
+    const result = await getActiveAuthenticatedCount();
+
+    expect(result).toBe(5);
+  });
+});
+
+describe("getUserRankAndTotal", () => {
+  it("returns the rank and total for the given user id", async () => {
+    const rankRow = { rank: 2, total: 10 };
+    vi.mocked(db.query).mockResolvedValueOnce({ rows: [rankRow] });
+
+    const result = await getUserRankAndTotal(1);
+
+    expect(db.query).toHaveBeenCalledWith(expect.any(String), [1]);
+    expect(result).toEqual(rankRow);
   });
 });

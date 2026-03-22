@@ -17,7 +17,10 @@ const StatsBody = () => {
                 <Typography>Subscribe for 5€/month to see it.</Typography>
             }
             {isSubscriber &&
-                <ListeningTime />
+                <>
+                    <ListeningTime />
+                    <Typography>#2 out of 3</Typography>
+                </>
             }
         </Stack>
     );

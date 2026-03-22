@@ -1,14 +1,17 @@
 import React from 'react';
 import Typography from '@mui/material/Typography';
+import Fade from '@mui/material/Fade';
 import FullOverlay from "./FullOverlay";
 
-const Loading = () => {
+const Loading = ({ channelName }) => {
     return (
-        <FullOverlay>
-            <Typography variant="h2">
-                Loading…
-            </Typography>
-        </FullOverlay>
+        <Fade in timeout={300}>
+            <FullOverlay>
+                <Typography variant="h3">
+                    {channelName ? `Connecting to ${channelName}…` : 'Connecting…'}
+                </Typography>
+            </FullOverlay>
+        </Fade>
     );
 };
 

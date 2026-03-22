@@ -1,4 +1,3 @@
-// shared/constants.ts
 export const CHANNELS: string[] = [
   "lofi",
   "coudrier",
@@ -9,4 +8,7 @@ export const CHANNELS: string[] = [
   "macroblank",
   "shpongle",
   "kaamelott",
+  "disney",
+  "shyamalan",
+  "trip-hop",
 ];

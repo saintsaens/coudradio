@@ -2,7 +2,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import About from "./About";
 
-export default function Footer({ channelName }) {
+export default function Footer() {
     return (
         <Box
             sx={{

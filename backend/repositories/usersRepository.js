@@ -65,3 +65,29 @@ export const deleteUser = async (id) => {
     const { rows } = await db.query(query, [id]);
     return rows[0];
 };
+
+export const getActiveAuthenticatedCount = async () => {
+    const query = `
+        SELECT COUNT(*) AS count
+        FROM ${tableName}
+        WHERE last_activity_time > NOW() - INTERVAL '2 minutes';
+    `;
+    const { rows } = await db.query(query);
+    return parseInt(rows[0].count, 10);
+};
+
+export const getUserRankAndTotal = async (id) => {
+    const query = `
+        WITH ranked AS (
+            SELECT id, time_spent,
+                   RANK() OVER (ORDER BY time_spent DESC) AS rank
+            FROM ${tableName}
+        )
+        SELECT r.rank, t.total
+        FROM ranked r
+        CROSS JOIN (SELECT COUNT(*) AS total FROM ${tableName}) t
+        WHERE r.id = $1;
+    `;
+    const { rows } = await db.query(query, [id]);
+    return rows[0];
+};
