@@ -54,18 +54,8 @@ describe('User Controller Tests', () => {
     });
 
     describe('updateUserActivity', () => {
-        test('should return 401 if not authenticated', async () => {
-            req.isAuthenticated = () => false;
-
-            await updateUserActivity(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(401);
-            expect(res.json).toHaveBeenCalledWith({ err: 'Not logged in' });
-        });
-
-        test('should return 200 with updated user when authenticated', async () => {
+        test('should return 200 with updated user', async () => {
             const mockUpdatedUser = { id: 1, username: 'alice', time_spent: 10 };
-            req.isAuthenticated = () => true;
             req.user = { id: 1, lastActivity: new Date(), timeSpent: 0 };
             usersService.updateUser.mockResolvedValue(mockUpdatedUser);
 
@@ -79,7 +69,6 @@ describe('User Controller Tests', () => {
         });
 
         test('should return 404 if the user is not found', async () => {
-            req.isAuthenticated = () => true;
             req.user = { id: 99, lastActivity: new Date(), timeSpent: 0 };
             usersService.updateUser.mockResolvedValue(null);
 
@@ -90,7 +79,6 @@ describe('User Controller Tests', () => {
         });
 
         test('should return 500 on service error', async () => {
-            req.isAuthenticated = () => true;
             req.user = { id: 1, lastActivity: new Date(), timeSpent: 0 };
             usersService.updateUser.mockRejectedValue(new Error('DB error'));
 
@@ -102,17 +90,7 @@ describe('User Controller Tests', () => {
     });
 
     describe('updateSessionStartTime', () => {
-        test('should return 401 if not authenticated', async () => {
-            req.isAuthenticated = () => false;
-
-            await updateSessionStartTime(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(401);
-            expect(res.json).toHaveBeenCalledWith({ err: 'Not logged in' });
-        });
-
-        test('should return 200 when authenticated', async () => {
-            req.isAuthenticated = () => true;
+        test('should return 200', async () => {
             req.user = { id: 1, lastActivity: null, sessionStartTime: null };
             usersService.updateUser.mockResolvedValue({ id: 1 });
 
@@ -125,7 +103,6 @@ describe('User Controller Tests', () => {
         });
 
         test('should return 404 if user is not found', async () => {
-            req.isAuthenticated = () => true;
             req.user = { id: 99, lastActivity: null, sessionStartTime: null };
             usersService.updateUser.mockResolvedValue(null);
 

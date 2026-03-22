@@ -2,73 +2,51 @@ import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
 
 export const updateUserActivity = async (req, res) => {
-    if (req.isAuthenticated()) {
-        try {
-            // Get user data from the current session
-            const userId = req.user.id;
+    try {
+        const userId = req.user.id;
+        const lastActivityTime = new Date();
+        const lastRecordedActivity = req.user.lastActivity || lastActivityTime;
+        const deltaTime = computeTimeSpent(lastRecordedActivity, lastActivityTime);
 
-            // Use lastActivity as the reference point
-            const lastActivityTime = new Date();
-            const lastRecordedActivity = req.user.lastActivity || lastActivityTime; // Fallback to now if undefined
+        req.user.lastActivity = lastActivityTime;
+        req.user.timeSpent = (req.user.timeSpent || 0) + deltaTime;
 
-            // Compute only the delta since last activity
-            const deltaTime = computeTimeSpent(lastRecordedActivity, lastActivityTime);
+        const updatedUser = await usersService.updateUser(userId, {
+            lastActivityTime,
+            timeSpent: req.user.timeSpent
+        });
 
-            // Update session data
-            req.user.lastActivity = lastActivityTime;
-            req.user.timeSpent = (req.user.timeSpent || 0) + deltaTime;
-
-
-            // Persist changes to database
-            const updatedUser = await usersService.updateUser(userId, {
-                lastActivityTime,
-                timeSpent: req.user.timeSpent
-            });
-
-            if (!updatedUser) {
-                return res.status(404).json({ error: "User not found" });
-            }
-            return res.status(200).json({
-                message: "User activity updated successfully",
-                user: updatedUser
-            });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Internal server error" });
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
         }
-    }
-    else {
-        return res.status(401).json({ err: "Not logged in" });
+        return res.status(200).json({
+            message: "User activity updated successfully",
+            user: updatedUser
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Internal server error" });
     }
 };
 
 export const updateSessionStartTime = async (req, res) => {
-    if (req.isAuthenticated()) {
-        try {
-            const userId = req.user.id;
+    try {
+        const userId = req.user.id;
+        const lastActivityTime = new Date();
+        const sessionStartTime = lastActivityTime;
 
-            // Compute new valeus for session start time and last activity
-            const lastActivityTime = new Date();
-            const sessionStartTime = lastActivityTime;
+        req.user.lastActivity = lastActivityTime;
+        req.user.sessionStartTime = sessionStartTime;
 
-            // Update session data
-            req.user.lastActivity = lastActivityTime;
-            req.user.sessionStartTime = sessionStartTime;
-
-            // Update database as well (persist the change)
-            const updatedUser = await usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
-            if (!updatedUser) {
-                return res.status(404).json({ error: "User not found" });
-            }
-
-            return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Internal server error" });
+        const updatedUser = await usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
         }
-    }
-    else {
-        return res.status(401).json({ err: "Not logged in" });
+
+        return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Internal server error" });
     }
 };
 
