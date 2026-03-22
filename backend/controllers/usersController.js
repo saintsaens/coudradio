@@ -56,7 +56,7 @@ export const updateSessionStartTime = async (req, res) => {
             req.user.sessionStartTime = sessionStartTime;
 
             // Update database as well (persist the change)
-            const updatedUser = usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
+            const updatedUser = await usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
             if (!updatedUser) {
                 return res.status(404).json({ error: "User not found" });
             }

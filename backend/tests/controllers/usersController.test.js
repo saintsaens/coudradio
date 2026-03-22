@@ -111,9 +111,7 @@ describe('User Controller Tests', () => {
             expect(res.json).toHaveBeenCalledWith({ err: 'Not logged in' });
         });
 
-        test('should return 200 when authenticated (updateUser is called without await)', async () => {
-            // The controller has a known bug: usersService.updateUser is called without await,
-            // so updatedUser is a Promise (truthy), never hitting the 404 branch.
+        test('should return 200 when authenticated', async () => {
             req.isAuthenticated = () => true;
             req.user = { id: 1, lastActivity: null, sessionStartTime: null };
             usersService.updateUser.mockResolvedValue({ id: 1 });
@@ -124,6 +122,17 @@ describe('User Controller Tests', () => {
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 message: 'User activity updated successfully',
             }));
+        });
+
+        test('should return 404 if user is not found', async () => {
+            req.isAuthenticated = () => true;
+            req.user = { id: 99, lastActivity: null, sessionStartTime: null };
+            usersService.updateUser.mockResolvedValue(null);
+
+            await updateSessionStartTime(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
         });
     });
 
