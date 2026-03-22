@@ -27,7 +27,7 @@ const ChannelList = ({ currentChannel, onClose }) => {
                             bgcolor: '#064663',
                             border: isActive ? '2px solid #ECB365' : '2px solid transparent',
                             borderRadius: 2,
-                            aspectRatio: '1',
+                            aspectRatio: '2',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
