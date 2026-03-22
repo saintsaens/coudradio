@@ -24,4 +24,6 @@ const FullOverlay = React.forwardRef(({ children, sx, ...props }, ref) => {
   );
 });
 
+FullOverlay.displayName = 'FullOverlay';
+
 export default FullOverlay;

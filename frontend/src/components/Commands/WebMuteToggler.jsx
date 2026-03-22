@@ -29,6 +29,7 @@ const WebMuteToggler = ({ audioRef, channelName }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioRef, isSwitcherOpen]);
 
   return (

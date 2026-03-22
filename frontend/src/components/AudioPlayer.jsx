@@ -77,6 +77,7 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     return () => {
       cleanupPlayer(); // Ensure cleanup when the component unmounts or reinitializes
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, dispatch]);
 
   return (

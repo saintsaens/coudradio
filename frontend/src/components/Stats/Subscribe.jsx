@@ -24,6 +24,7 @@ const Subscribe = () => {
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]); // Re-run effect only if userId changes
 
     return userId ? (

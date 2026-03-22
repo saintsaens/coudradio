@@ -54,7 +54,7 @@ const audioPlayerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(checkStream.rejected, (state, action) => {
+      .addCase(checkStream.rejected, (state, _action) => {
         state.error = true;
       })
       .addCase(checkStream.fulfilled, (state) => {

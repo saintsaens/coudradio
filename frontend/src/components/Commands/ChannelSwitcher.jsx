@@ -58,6 +58,7 @@ const ChannelSwitcher = () => {
     useEffect(() => {
         const item = filteredItems[selectedIndex];
         if (item) prefetchMPDDuration(`${backendUrl}/${item}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedIndex, filteredItems]);
 
     useEffect(() => {
@@ -74,6 +75,7 @@ const ChannelSwitcher = () => {
         return () => {
             document.removeEventListener('keydown', handleKeyPress);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isSwitcherOpen, filteredItems]);
 
     return (
