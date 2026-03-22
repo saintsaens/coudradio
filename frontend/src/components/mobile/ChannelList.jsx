@@ -38,7 +38,7 @@ const ChannelList = ({ currentChannel, onClose }) => {
                             '&:active': { bgcolor: '#0a5a7a' },
                         }}
                     >
-                        {channel}
+                        {channel.replace(/-/g, ' ')}
                     </ButtonBase>
                 );
             })}
