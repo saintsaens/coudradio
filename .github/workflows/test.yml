@@ -23,6 +23,11 @@ jobs:
       - name: Run backend tests
         run: npm test -- --run
         working-directory: backend
+        env:
+          MINIO_ENDPOINT: localhost
+          MINIO_ACCESS_KEY: test
+          MINIO_SECRET_KEY: test
+          DATABASE_URL: postgresql://localhost/test
 
       - name: Install frontend dependencies
         run: npm install
