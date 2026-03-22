@@ -3,21 +3,18 @@ import stripe from "../stripe/index.js";
 
 export const webhook = async (request, response) => {
     const endpointSecret = process.env.STRIPE_WEBHOOK_SIGNING_SECRET;
-    let event = request.body;
+    if (!endpointSecret) {
+        console.error('STRIPE_WEBHOOK_SIGNING_SECRET is not set');
+        return response.sendStatus(500);
+    }
 
-    if (endpointSecret) {
-        // Get the signature sent by Stripe
-        const signature = request.headers['stripe-signature'];
-        try {
-            event = stripe.webhooks.constructEvent(
-                request.body,
-                signature,
-                endpointSecret
-            );
-        } catch (err) {
-            console.log(`⚠️  Webhook signature verification failed.`, err.message);
-            return response.sendStatus(400);
-        }
+    const signature = request.headers['stripe-signature'];
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(request.body, signature, endpointSecret);
+    } catch (err) {
+        console.log(`⚠️  Webhook signature verification failed.`, err.message);
+        return response.sendStatus(400);
     }
 
     // Handle the event

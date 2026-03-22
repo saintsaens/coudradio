@@ -22,16 +22,11 @@ describe('webhook', () => {
         };
     });
 
-    it('handles checkout.session.completed without a signing secret', async () => {
-        req.body = {
-            type: 'checkout.session.completed',
-            data: { object: { client_reference_id: '42' } },
-        };
-
+    it('returns 500 when STRIPE_WEBHOOK_SIGNING_SECRET is not set', async () => {
         await webhook(req, res);
 
-        expect(stripeService.handleSuccessfulSessionCheckout).toHaveBeenCalledWith('42');
-        expect(res.send).toHaveBeenCalled();
+        expect(res.sendStatus).toHaveBeenCalledWith(500);
+        expect(stripeService.handleSuccessfulSessionCheckout).not.toHaveBeenCalled();
     });
 
     it('constructs the event when a signing secret is present and the signature is valid', async () => {
@@ -60,7 +55,11 @@ describe('webhook', () => {
     });
 
     it('sends 200 for unknown event types without calling handleSuccessfulSessionCheckout', async () => {
-        req.body = { type: 'refund.created', data: { object: {} } };
+        process.env.STRIPE_WEBHOOK_SIGNING_SECRET = 'test-secret';
+        const constructedEvent = { type: 'refund.created', data: { object: {} } };
+        vi.mocked(stripe.webhooks.constructEvent).mockReturnValue(constructedEvent);
+        req.headers['stripe-signature'] = 'valid-sig';
+        req.body = 'raw-body';
 
         await webhook(req, res);
 
