@@ -4,27 +4,12 @@ import path from "path";
 
 export const uploadSegment = async (segmentPath, channel) => {
     if (!fs.existsSync(segmentPath)) {
-        console.error(`Segment file not found: ${segmentPath}`);
-        return null;
+        throw new Error(`File not found at path: ${segmentPath}`);
     }
 
     const segmentName = path.basename(segmentPath);
-
-    try {
-        const uploadedSegmentName =
-            await segmentsRepository.uploadSegment(segmentPath, segmentName, channel);
-
-        if (!uploadedSegmentName) {
-            console.error(`Segment upload failed: ${segmentName}`);
-            return null;
-        }
-
-        return uploadedSegmentName;
-    } catch (error) {
-        // defensive: repository *shouldn't* throw anymore, but don't trust it
-        console.error(`Unexpected error uploading segment ${segmentName}`, error);
-        return null;
-    }
+    const objectName = `${process.env.MINIO_SEGMENTS_PATH}/${channel}/${segmentName}`;
+    return segmentsRepository.putSegmentObject(objectName, segmentPath);
 };
 
 export const getSegmentStream = async (channelName, segmentName) => {

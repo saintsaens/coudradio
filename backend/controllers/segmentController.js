@@ -1,5 +1,4 @@
 import * as segmentsService from "../services/segmentsService.js";
-import fs from "fs";
 
 export const getSegment = async (req, res) => {
     try {

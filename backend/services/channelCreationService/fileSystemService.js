@@ -25,7 +25,7 @@ export const cleanUpLocalTrackDirectory = async (channelName, index) => {
     }
 };
 
-export const localMpdDirectoryFor = (channelName) => {
+export const localMpdDirectory = () => {
     validateEnv();
     return path.join(process.env.PUBLIC_MPD_PATH);
 }

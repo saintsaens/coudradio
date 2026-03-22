@@ -27,8 +27,6 @@ const uploadFile = async (filePath) => {
         .relative(absSourceDir, filePath)
         .replace(/\\/g, "/");
 
-    const stream = fs.createReadStream(filePath);
-
     console.log(`Uploading ${objectName}`);
 
     await minioClient.fPutObject(

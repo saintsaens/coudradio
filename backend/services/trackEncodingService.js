@@ -54,7 +54,7 @@ export const encodeTracks = async (playlist, channel) => {
     console.log(`Encoding track${index}…`);
     const singleTrackMpdPath = await encodeTrack(index, playlist, channelPath);
 
-Á    // Store the MPD path
+    // Store the MPD path
     mpdPaths.push(singleTrackMpdPath);
   }
 

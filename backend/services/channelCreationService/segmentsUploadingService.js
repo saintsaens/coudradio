@@ -1,6 +1,4 @@
 import { putSegmentObject } from "../../repositories/segmentsRepository.js";
-import fs from "fs";
-import path from "path";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY = 1000;

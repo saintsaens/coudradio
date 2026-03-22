@@ -4,7 +4,7 @@ import path from 'path';
 import xml2js from 'xml2js';
 import * as mpdRepository from "../repositories/mpdRepository.js"
 import { encodeTracks } from "./trackEncodingService.js";
-import { localMpdDirectoryFor } from "./channelCreationService/fileSystemService.js";
+import { localMpdDirectory } from "./channelCreationService/fileSystemService.js";
 
 export const extractMediaPresentationDuration = async (mpdPath) => {
     const data = await fs.readFile(mpdPath, 'utf8');
@@ -139,7 +139,7 @@ export const createUnifiedMPD = async (playlist, channel) => {
     const unifiedMPDPath = createUnifiedMpdPath(channel);
     const unifiedMPDHeader = createUnifiedMpdHeader();
     const unifiedMPDFooter = createUnifiedMpdFooter();
-    const unifiedMPDPeriods = await createUnifiedMpdPeriods(playlist, singleMpdPaths);
+    const unifiedMPDPeriods = await createUnifiedMpdPeriods(playlist, singleMpdPaths, channel);
 
     console.log(`Creating unified MPD…`);
     const unifiedMPD = [
@@ -200,10 +200,10 @@ export const transformMpdIntoPeriod = async (index, sourceMpd, channel) => {
 </Period>`;
 };
 
-const createUnifiedMpdPeriods = async (tracks, singleMpdPaths) => {
+const createUnifiedMpdPeriods = async (tracks, singleMpdPaths, channel) => {
     const mpdPeriods = await Promise.all(
-        tracks.map((track, index) =>
-            createUnifiedMpdPeriod(track, index, singleMpdPaths[index])
+        tracks.map((_, index) =>
+            transformMpdIntoPeriod(index, singleMpdPaths[index], channel)
         )
     );
 
@@ -219,7 +219,7 @@ const createMediaSegmentRoute = (trackIndex, channel) => {
 };
 
 export const uploadMpd = async (channelName) => {
-    const mpdPath = localMpdDirectoryFor(channelName) + `/${channelName}.mpd`;
+    const mpdPath = localMpdDirectory() + `/${channelName}.mpd`;
     try {
         await fs.access(mpdPath);
     } catch {
