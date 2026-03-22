@@ -23,10 +23,12 @@ export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
     throw new Error('Not logged in');
 });
 
-export const updateLastActivity = createAsyncThunk('user/updateLastActivity', async () => {
+export const updateLastActivity = createAsyncThunk('user/updateLastActivity', async (channel) => {
     const response = await fetch(`${baseUrl}/users/activity`, {
         method: 'PATCH',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel }),
     });
 
     if (!response.ok) {

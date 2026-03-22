@@ -57,13 +57,13 @@ export default function Channel({ channelName }) {
     useEffect(() => {
         if (userId) {
             const updateActivity = () => {
-                dispatch(updateLastActivity());
+                dispatch(updateLastActivity(channelName));
             };
             dispatch(updateSessionStartTime());
             const interval = setInterval(updateActivity, 59000);
             return () => clearInterval(interval);
         }
-    }, [dispatch, userId]);
+    }, [dispatch, userId, channelName]);
 
     if (error) {
         return <Unavailable onRetry={() => dispatch(setError(false))} />;

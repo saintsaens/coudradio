@@ -77,6 +77,16 @@ export const getActiveAuthenticatedCount = async () => {
     return parseInt(rows[0].count, 10);
 };
 
+export const upsertListeningTime = async (userId, channel, delta) => {
+    const query = `
+        INSERT INTO listening_time (user_id, channel, time_spent)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id, channel)
+        DO UPDATE SET time_spent = listening_time.time_spent + EXCLUDED.time_spent;
+    `;
+    await db.query(query, [userId, channel, delta]);
+};
+
 export const getUserRankAndTotal = async (id) => {
     const query = `
         WITH ranked AS (
