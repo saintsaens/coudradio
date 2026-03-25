@@ -70,6 +70,26 @@ Expo Router with file-based routing. Key routes: `index.tsx` (channel list), `/c
 
 **Frontend** (`.env`): `VITE_BACKEND_URL`, `VITE_CHANNELS_DEFAULT` (comma-separated, shown to unauthenticated users), `VITE_CHANNELS_LOGGEDIN` (comma-separated, shown to authenticated users), SSL cert paths
 
+## API Routes
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/:channel` | DASH manifest (MPD) for a channel |
+| `GET` | `/api/segment` | Audio segment data |
+| `GET` | `/api/auth/login` | Initiate Google OAuth |
+| `GET` | `/api/auth/oauth2/redirect/google` | OAuth callback |
+| `POST` | `/api/auth/logout` | Logout |
+| `GET` | `/api/auth/user/profile` | Fetch user profile |
+| `GET` | `/api/users/listeners` | Active listener count |
+| `POST` | `/api/payment/webhook` | Stripe webhook |
+
+## Database
+
+PostgreSQL with three tables:
+- `users` — accounts, roles, session tracking, time spent
+- `sessions` — express session store (via `connect-pg-simple`)
+- `federated_credentials` — Google OAuth credentials
+
 ## Creating a New Channel
 
 1. Upload audio files to a new MinIO bucket named `<channel-name>`
