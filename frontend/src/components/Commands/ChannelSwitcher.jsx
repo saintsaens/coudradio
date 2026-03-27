@@ -136,7 +136,8 @@ const ChannelSwitcher = () => {
                                     dispatch(closeSwitcher());
                                 }}
                                 sx={{
-                                    padding: 1,
+                                    paddingX: 1,
+                                    paddingY: 0.25,
                                     color: selectedIndex === index ? 'primary.main' : 'inherit', // Change text color when selected
                                 }}
                             >
