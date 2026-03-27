@@ -107,17 +107,29 @@ const ChannelSwitcher = () => {
                     pointerEvents: "none"
                 }}
             >
-                <InputBase
-                    inputRef={searchInputRef}
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    fullWidth
-                    autoFocus
-                    sx={{
-                        padding: 1,
-                        fontSize: "2rem"
-                    }}
-                />
+                <Box sx={{ position: 'relative' }}>
+                    <InputBase
+                        inputRef={searchInputRef}
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        fullWidth
+                        autoFocus
+                        sx={{
+                            padding: 1,
+                            fontSize: "2rem"
+                        }}
+                    />
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: 4,
+                        right: 8,
+                        fontSize: '0.65rem',
+                        opacity: 0.4,
+                        pointerEvents: 'none',
+                    }}>
+                        ?: random
+                    </Box>
+                </Box>
                 <List disablePadding
                     sx={{
                         paddingBottom: 0.5,
