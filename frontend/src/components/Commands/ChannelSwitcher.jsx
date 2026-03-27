@@ -52,7 +52,16 @@ const ChannelSwitcher = () => {
     };
 
     const handleSearchChange = (event) => {
-        setSearchQuery(event.target.value);
+        const value = event.target.value;
+        if (value === '?') {
+            const others = listItems.filter(item => item !== currentChannel);
+            const pool = others.length > 0 ? others : listItems;
+            const random = pool[Math.floor(Math.random() * pool.length)];
+            navigate(`/${random}`);
+            dispatch(closeSwitcher());
+            return;
+        }
+        setSearchQuery(value);
     };
 
     useEffect(() => {
