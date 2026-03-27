@@ -12,7 +12,7 @@ const ListenerCount = () => {
     if (anonymous > 0) parts.push(`${anonymous} anonymous`);
 
     return (
-        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+        <Typography variant="body2" sx={{ opacity: 0.6, mt: 1 }}>
             {parts.join(' • ')}
         </Typography>
     );
