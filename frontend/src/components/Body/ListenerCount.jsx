@@ -7,13 +7,14 @@ const ListenerCount = () => {
 
     if (authenticated + anonymous === 0) return null;
 
-    const parts = [];
-    if (authenticated > 0) parts.push(`${authenticated} listener${authenticated !== 1 ? 's' : ''}`);
-    if (anonymous > 0) parts.push(`${anonymous} anonymous`);
+    const total = authenticated + anonymous;
+    const details = [];
+    if (authenticated > 0) details.push(`${authenticated} connected`);
+    if (anonymous > 0) details.push(`${anonymous} anonymous`);
 
     return (
         <Typography variant="body2" sx={{ opacity: 0.6, mt: 1 }}>
-            {parts.join(' • ')}
+            {`${total} listener${total !== 1 ? 's' : ''}`}{details.length > 0 && ` (${details.join(', ')})`}
         </Typography>
     );
 };
