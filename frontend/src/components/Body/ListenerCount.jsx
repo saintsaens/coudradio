@@ -6,7 +6,7 @@ const ListenerCount = () => {
     const isMuted = useSelector((state) => state.audioPlayer.isMuted);
     const { authenticated, anonymous } = useSelector((state) => state.listeners);
 
-    if (isMuted || (authenticated === 0 && anonymous === 0)) return null;
+    if (isMuted || authenticated + anonymous === 0) return null;
 
     const parts = [];
     if (authenticated > 0) parts.push(`${authenticated} listener${authenticated !== 1 ? 's' : ''}`);
