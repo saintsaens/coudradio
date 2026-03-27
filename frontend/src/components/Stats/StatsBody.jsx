@@ -19,7 +19,6 @@ const StatsBody = () => {
             {isSubscriber &&
                 <>
                     <ListeningTime />
-                    <Typography>#2 out of 3</Typography>
                 </>
             }
         </Stack>
