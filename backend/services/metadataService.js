@@ -1,6 +1,5 @@
 import xml2js from 'xml2js';
-import { getMpd } from '../repositories/mpdRepository.js';
-import { getTracks } from '../repositories/trackRepository.js';
+import { getMpd, getTrackList } from '../repositories/mpdRepository.js';
 
 const cache = new Map();
 
@@ -37,8 +36,7 @@ const buildCache = async (channel) => {
     const durations = periods.map((p) => iso8601ToSeconds(p.duration));
     const total = durations.reduce((sum, d) => sum + d, 0);
 
-    const filenames = await getTracks(channel);
-    filenames.sort();
+    const filenames = await getTrackList(channel);
     const tracks = filenames.map(parseTrackName);
 
     cache.set(channel, { tracks, durations, total });
