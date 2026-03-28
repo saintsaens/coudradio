@@ -6,7 +6,7 @@ import { setError } from "../store/features/audioPlayerSlice";
 import MuteToggler from "./Commands/MuteToggler";
 import Loading from "./Loading";
 import Unavailable from "./Unavailable";
-import { fetchUser, updateLastActivity, updateSessionStartTime } from "../store/features/userSlice";
+import { fetchUser, updateLastActivity, updateSessionStartTime, fetchListeningTimes } from "../store/features/userSlice";
 import { fetchListeners } from "../store/features/listenersSlice";
 import useIsMobile from "../hooks/useIsMobile";
 import ChannelList from "./mobile/ChannelList";
@@ -31,7 +31,8 @@ export default function Channel({ channelName }) {
 
     useEffect(() => {
         dispatch(fetchUser());
-    }, [dispatch]);
+        dispatch(fetchListeningTimes());
+    }, [dispatch, channelName]);
 
     useEffect(() => {
         dispatch(fetchListeners());
