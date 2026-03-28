@@ -53,8 +53,8 @@ export const getListenerCounts = async () => {
     return { authenticated, anonymous };
 };
 
-export const getListeningTimeByChannel = async (userId, channel) => {
-    return await usersRepository.getListeningTimeByChannel(userId, channel);
+export const getListeningTimesByUser = async (userId) => {
+    return await usersRepository.getListeningTimesByUser(userId);
 };
 
 export const getUserRankAndTotal = async (id) => {

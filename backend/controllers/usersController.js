@@ -2,12 +2,11 @@ import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
 import { upsertListeningTime } from "../repositories/usersRepository.js";
 
-export const getChannelListeningTime = async (req, res, next) => {
+export const getListeningTimes = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const { channel } = req.params;
-        const timeSpent = await usersService.getListeningTimeByChannel(userId, channel);
-        return res.status(200).json({ channel, timeSpent });
+        const times = await usersService.getListeningTimesByUser(userId);
+        return res.status(200).json(times);
     } catch (err) {
         next(err);
     }
