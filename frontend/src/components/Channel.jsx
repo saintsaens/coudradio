@@ -58,7 +58,9 @@ export default function Channel({ channelName }) {
     useEffect(() => {
         if (userId) {
             const updateActivity = () => {
-                dispatch(updateLastActivity(channelName));
+                dispatch(updateLastActivity(channelName)).then(() => {
+                    dispatch(fetchListeningTimes());
+                });
             };
             dispatch(updateSessionStartTime());
             const interval = setInterval(updateActivity, 59000);

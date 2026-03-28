@@ -67,6 +67,7 @@ const userSlice = createSlice({
         lastActivity: '',
         timeSpent: 0,
         listeningTimes: {},
+        listeningTimesFetchedAt: null,
         isSubscriber: false,
         email: '',
         channelList: [],
@@ -99,6 +100,7 @@ const userSlice = createSlice({
                 state.listeningTimes = Object.fromEntries(
                     action.payload.map(({ channel, timeSpent }) => [channel, timeSpent])
                 );
+                state.listeningTimesFetchedAt = Date.now();
             })
             .addCase(fetchUser.rejected, (state, action) => {
                 state.status = 'failed';

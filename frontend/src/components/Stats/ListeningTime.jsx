@@ -3,7 +3,7 @@ import { Box, Divider, Typography } from '@mui/material';
 import { useSelector } from "react-redux";
 
 const ListeningTime = () => {
-    const { timeSpent, listeningTimes } = useSelector((state) => state.user);
+    const { timeSpent, listeningTimes, listeningTimesFetchedAt } = useSelector((state) => state.user);
     const { currentChannel } = useSelector((state) => state.channelSwitcher);
     const [elapsedTotal, setElapsedTotal] = useState(0);
     const [elapsedChannel, setElapsedChannel] = useState(0);
@@ -13,8 +13,12 @@ const ListeningTime = () => {
     }, [timeSpent]);
 
     useEffect(() => {
-        setElapsedChannel(listeningTimes[currentChannel] ?? 0);
-    }, [listeningTimes, currentChannel]);
+        const base = listeningTimes[currentChannel] ?? 0;
+        const secondsSinceFetch = listeningTimesFetchedAt
+            ? Math.floor((Date.now() - listeningTimesFetchedAt) / 1000)
+            : 0;
+        setElapsedChannel(base + secondsSinceFetch);
+    }, [listeningTimes, currentChannel, listeningTimesFetchedAt]);
 
     useEffect(() => {
         const interval = setInterval(() => {
