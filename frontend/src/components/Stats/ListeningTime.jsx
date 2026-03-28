@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Typography } from '@mui/material';
-import { useSelector, useDispatch } from "react-redux";
-import { fetchChannelListeningTime } from "../../store/features/userSlice";
+import { Box, Divider, Typography } from '@mui/material';
+import { useSelector } from "react-redux";
 
 const ListeningTime = () => {
-    const dispatch = useDispatch();
-    const { timeSpent, channelTimeSpent } = useSelector((state) => state.user);
+    const { timeSpent, listeningTimes } = useSelector((state) => state.user);
     const { currentChannel } = useSelector((state) => state.channelSwitcher);
     const [elapsedTotal, setElapsedTotal] = useState(0);
     const [elapsedChannel, setElapsedChannel] = useState(0);
 
     useEffect(() => {
-        if (timeSpent !== 0) setElapsedTotal(timeSpent);
+        if (timeSpent) setElapsedTotal(timeSpent);
     }, [timeSpent]);
 
     useEffect(() => {
-        setElapsedChannel(channelTimeSpent);
-    }, [channelTimeSpent]);
-
-    useEffect(() => {
-        dispatch(fetchChannelListeningTime(currentChannel));
-    }, [dispatch, currentChannel]);
+        setElapsedChannel(listeningTimes[currentChannel] ?? 0);
+    }, [listeningTimes, currentChannel]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -38,11 +32,26 @@ const ListeningTime = () => {
         return `${days.toString().padStart(2, "0")}:${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
+    const channels = Object.entries({ ...listeningTimes, [currentChannel]: listeningTimes[currentChannel] ?? 0 })
+        .filter(([channel, t]) => t > 0 || channel === currentChannel)
+        .sort(([, a], [, b]) => b - a);
+
     return (
-        <>
-            <Typography variant="h3">{formatTime(elapsedChannel)}</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.6 }}>{`total: ${formatTime(elapsedTotal)}`}</Typography>
-        </>
+        <Box sx={{ width: '100%', minWidth: 260 }}>
+            {channels.map(([channel]) => (
+                <Box key={channel} sx={{ display: 'flex', justifyContent: 'space-between', gap: 4, py: 0.5 }}>
+                    <Typography variant="body2">{channel}</Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        {formatTime(channel === currentChannel ? elapsedChannel : listeningTimes[channel])}
+                    </Typography>
+                </Box>
+            ))}
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+                <Typography variant="body2">total</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{formatTime(elapsedTotal)}</Typography>
+            </Box>
+        </Box>
     );
 };
 

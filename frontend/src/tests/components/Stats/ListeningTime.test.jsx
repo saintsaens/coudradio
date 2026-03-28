@@ -4,11 +4,11 @@ import { screen, act } from '@testing-library/react';
 import { renderWithStore } from '../../testUtils.jsx';
 import ListeningTime from '../../../components/Stats/ListeningTime.jsx';
 
-const render = (timeSpent = 0, channelTimeSpent = 0) =>
+const render = ({ timeSpent = 0, listeningTimes = {}, currentChannel = 'lofi' } = {}) =>
     renderWithStore(<ListeningTime />, {
         preloadedState: {
-            user: { timeSpent, channelTimeSpent },
-            channelSwitcher: { currentChannel: 'lofi' },
+            user: { timeSpent, listeningTimes },
+            channelSwitcher: { currentChannel },
         },
     });
 
@@ -21,31 +21,36 @@ describe('ListeningTime', () => {
         vi.useRealTimers();
     });
 
-    it('displays 00:00:00:00 for channel and total when both are 0', () => {
-        render(0, 0);
-        expect(screen.getByRole('heading')).toHaveTextContent('00:00:00:00');
-        expect(screen.getByText('total: 00:00:00:00')).toBeInTheDocument();
+    it('always shows the active channel even with no history', () => {
+        render({ currentChannel: 'lofi' });
+        expect(screen.getByText('lofi')).toBeInTheDocument();
     });
 
-    it('formats 3661 channel seconds as 00:01:01:01', () => {
-        render(0, 3661);
-        expect(screen.getByRole('heading')).toHaveTextContent('00:01:01:01');
+    it('shows channel time from listeningTimes', () => {
+        render({ listeningTimes: { lofi: 3661 }, currentChannel: 'lofi' });
+        expect(screen.getByText('00:01:01:01')).toBeInTheDocument();
     });
 
-    it('formats 86400 total seconds as 01:00:00:00', () => {
-        render(86400, 0);
-        expect(screen.getByText('total: 01:00:00:00')).toBeInTheDocument();
+    it('shows all channels with time > 0', () => {
+        render({ listeningTimes: { lofi: 100, jazz: 200 }, currentChannel: 'lofi' });
+        expect(screen.getByText('lofi')).toBeInTheDocument();
+        expect(screen.getByText('jazz')).toBeInTheDocument();
     });
 
-    it('auto-increments channel and total by 3 after 3 seconds', () => {
-        render(0, 0);
+    it('shows total from timeSpent', () => {
+        render({ timeSpent: 86400 });
+        expect(screen.getByText('01:00:00:00')).toBeInTheDocument();
+    });
+
+    it('auto-increments active channel and total after 3 seconds', () => {
+        render({ listeningTimes: { lofi: 0 }, currentChannel: 'lofi' });
         act(() => vi.advanceTimersByTime(3000));
-        expect(screen.getByRole('heading')).toHaveTextContent('00:00:00:03');
-        expect(screen.getByText('total: 00:00:00:03')).toBeInTheDocument();
+        const monospaced = screen.getAllByText('00:00:00:03');
+        expect(monospaced).toHaveLength(2); // channel row + total
     });
 
     it('syncs total when timeSpent changes in store', () => {
-        const { store } = render(0, 0);
+        const { store } = render({});
         act(() => {
             store.dispatch({ type: 'user/fetchUser/fulfilled', payload: {
                 userId: '', username: '', role: 'user',
@@ -53,6 +58,6 @@ describe('ListeningTime', () => {
                 timeSpent: 120, isSubscriber: false, email: '',
             }});
         });
-        expect(screen.getByText('total: 00:00:02:00')).toBeInTheDocument();
+        expect(screen.getByText('00:00:02:00')).toBeInTheDocument();
     });
 });
