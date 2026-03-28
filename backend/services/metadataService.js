@@ -32,7 +32,7 @@ const parseTrackName = (filename) => {
 const buildCache = async (channel) => {
     const stream = await getMpd(channel);
     const xml = await streamToString(stream);
-    const result = await xml2js.parseStringPromise(xml, { mergeAttrs: true });
+    const result = await xml2js.parseStringPromise(xml, { explicitArray: false, mergeAttrs: true });
     const periods = Array.isArray(result.MPD.Period) ? result.MPD.Period : [result.MPD.Period];
     const durations = periods.map((p) => iso8601ToSeconds(p.duration));
     const total = durations.reduce((sum, d) => sum + d, 0);
