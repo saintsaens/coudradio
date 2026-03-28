@@ -6,7 +6,7 @@ describe('errorHandler', () => {
     let req, res, next;
 
     beforeEach(() => {
-        req = {};
+        req = { method: 'GET', path: '/test' };
         res = {
             status: vi.fn().mockReturnThis(),
             json: vi.fn(),

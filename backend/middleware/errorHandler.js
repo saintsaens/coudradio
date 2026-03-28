@@ -7,6 +7,6 @@ export const errorHandler = (err, req, res, _next) => {
     if (err instanceof ValidationError) {
         return res.status(400).json({ error: err.message });
     }
-    console.error(err);
+    console.error(`[${req.method} ${req.path}]`, err);
     return res.status(500).json({ error: 'Internal server error' });
 };
