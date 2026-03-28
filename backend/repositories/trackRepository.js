@@ -7,6 +7,7 @@ export const getTrack = async (channel, trackName) => {
         const stream = await minioClient.getObject(channel, trackName);
         return stream;
     } catch (error) {
+        console.error(`[getTrack] MinIO error (channel="${channel}" track="${trackName}"):`, error);
         throw new Error(`Invalid channel: ${channel}`);
     }
 };
@@ -25,6 +26,7 @@ export const getTracks = async (channel) => {
             stream.on('end', () => resolve(tracks));
         });
     } catch (error) {
+        console.error(`[getTracks] MinIO error (channel="${channel}"):`, error);
         throw new Error(`Invalid channel: ${channel}`);
     }
 };
@@ -33,6 +35,7 @@ export const getTrackUrl = async (channel, trackName) => {
     try {
         return await minioClient.presignedUrl('GET', channel, trackName);
     } catch (error) {
+        console.error(`[getTrackUrl] MinIO error (channel="${channel}" track="${trackName}"):`, error);
         throw new Error(`Invalid track: ${trackName}`);
     }
 };
