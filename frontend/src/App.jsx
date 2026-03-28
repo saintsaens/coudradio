@@ -9,10 +9,12 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import { BrowserRouter as Router } from 'react-router-dom';
 import AppRoutes from "./components/AppRoutes";
 
+console.log('%cWelcome to Coudradio!', 'color: #ECB365');
+
 const App = () => {
     return (
         <>
-            <Router>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <ThemeProvider theme={theme}>
                     <CssBaseline />
                     <AppRoutes />

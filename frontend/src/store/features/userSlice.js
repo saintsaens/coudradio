@@ -38,6 +38,14 @@ export const updateLastActivity = createAsyncThunk('user/updateLastActivity', as
     return await response.json();
 });
 
+export const fetchChannelListeningTime = createAsyncThunk('user/fetchChannelListeningTime', async (channel) => {
+    const response = await fetch(`${baseUrl}/users/channel-time/${channel}`, {
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch channel listening time');
+    return await response.json();
+});
+
 export const updateSessionStartTime = createAsyncThunk('user/updateSessionStartTime', async () => {
     const response = await fetch(`${baseUrl}/users/open`, {
         method: 'PATCH',
@@ -60,6 +68,7 @@ const userSlice = createSlice({
         sessionStartTime: '',
         lastActivity: '',
         timeSpent: 0,
+        channelTimeSpent: 0,
         isSubscriber: false,
         email: '',
         channelList: [],
@@ -87,6 +96,9 @@ const userSlice = createSlice({
                     ? import.meta.env.VITE_CHANNELS_LOGGEDIN
                     : import.meta.env.VITE_CHANNELS_DEFAULT || '';
                 state.channelList = raw.split(',');
+            })
+            .addCase(fetchChannelListeningTime.fulfilled, (state, action) => {
+                state.channelTimeSpent = action.payload.timeSpent;
             })
             .addCase(fetchUser.rejected, (state, action) => {
                 state.status = 'failed';

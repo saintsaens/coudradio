@@ -77,6 +77,15 @@ export const getActiveAuthenticatedCount = async () => {
     return parseInt(rows[0].count, 10);
 };
 
+export const getListeningTimeByChannel = async (userId, channel) => {
+    const query = `
+        SELECT time_spent FROM listening_time
+        WHERE user_id = $1 AND channel = $2;
+    `;
+    const { rows } = await db.query(query, [userId, channel]);
+    return rows[0]?.time_spent ?? 0;
+};
+
 export const upsertListeningTime = async (userId, channel, delta) => {
     const query = `
         INSERT INTO listening_time (user_id, channel, time_spent)

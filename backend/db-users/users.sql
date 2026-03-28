@@ -10,3 +10,10 @@ CREATE TABLE users (
     email TEXT NOT NULL,
     stripe_customer_id TEXT
 );
+
+CREATE TABLE listening_time (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    channel TEXT NOT NULL,
+    time_spent INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, channel)
+);

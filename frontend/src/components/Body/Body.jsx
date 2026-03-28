@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import React from "react";
 import Title from "./Title";
-import ListenerCount from "./ListenerCount";
 
 export default function Body({ channelName }) {
     return (
@@ -15,7 +14,6 @@ export default function Body({ channelName }) {
             }}
         >
             <Title channelName={channelName} />
-            <ListenerCount />
         </Box>
     );
 }

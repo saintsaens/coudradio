@@ -16,6 +16,7 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     player = dashjs.MediaPlayer().create();
 
     player.initialize();
+    player.updateSettings({ debug: { logLevel: dashjs.Debug.LOG_LEVEL_ERROR } });
     player.attachView(video);
     player.setAutoPlay(true);
     player.attachSource(src, start);

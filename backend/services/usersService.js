@@ -53,6 +53,10 @@ export const getListenerCounts = async () => {
     return { authenticated, anonymous };
 };
 
+export const getListeningTimeByChannel = async (userId, channel) => {
+    return await usersRepository.getListeningTimeByChannel(userId, channel);
+};
+
 export const getUserRankAndTotal = async (id) => {
     const result = await usersRepository.getUserRankAndTotal(id);
     if (!result) {

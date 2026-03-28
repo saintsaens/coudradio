@@ -1,22 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Typography } from '@mui/material';
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchChannelListeningTime } from "../../store/features/userSlice";
 
 const ListeningTime = () => {
-    const { timeSpent } = useSelector((state) => state.user);
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const dispatch = useDispatch();
+    const { timeSpent, channelTimeSpent } = useSelector((state) => state.user);
+    const { currentChannel } = useSelector((state) => state.channelSwitcher);
+    const [elapsedTotal, setElapsedTotal] = useState(0);
+    const [elapsedChannel, setElapsedChannel] = useState(0);
 
     useEffect(() => {
-        if (timeSpent !== 0) {
-            setElapsedTime(timeSpent);
-        }
+        if (timeSpent !== 0) setElapsedTotal(timeSpent);
     }, [timeSpent]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setElapsedTime((prev) => prev + 1);
-        }, 1000);
+        setElapsedChannel(channelTimeSpent);
+    }, [channelTimeSpent]);
 
+    useEffect(() => {
+        dispatch(fetchChannelListeningTime(currentChannel));
+    }, [dispatch, currentChannel]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setElapsedTotal((prev) => prev + 1);
+            setElapsedChannel((prev) => prev + 1);
+        }, 1000);
         return () => clearInterval(interval);
     }, []);
 
@@ -29,7 +39,10 @@ const ListeningTime = () => {
     };
 
     return (
-        <Typography variant="h3">{formatTime(elapsedTime)}</Typography>
+        <>
+            <Typography variant="h3">{formatTime(elapsedChannel)}</Typography>
+            <Typography variant="body2" sx={{ opacity: 0.6 }}>total: {formatTime(elapsedTotal)}</Typography>
+        </>
     );
 };
 

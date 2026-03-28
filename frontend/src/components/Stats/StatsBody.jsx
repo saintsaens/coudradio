@@ -2,14 +2,16 @@ import React from 'react';
 import { Stack, Typography } from '@mui/material';
 import { useSelector } from "react-redux";
 import ListeningTime from "./ListeningTime";
+import ListenerCount from "../Body/ListenerCount";
 
 const StatsBody = () => {
     const { username, isSubscriber, email } = useSelector((state) => state.user);
 
     return (
         <Stack spacing={2} alignItems="center">
+            <ListenerCount />
             {username ? (
-                <Typography variant="body1">{`Recording listening time as ${username} (${email}).`}</Typography>
+                <Typography variant="body1">{`Tracking listen time · ${username} (${email}).`}</Typography>
             ) : (
                 <Typography variant="body1">Log in to record your listening time.</Typography>
             )}
