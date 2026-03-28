@@ -13,7 +13,7 @@ const ListenerCount = () => {
     if (anonymous > 0) details.push(`${anonymous} anonymous`);
 
     return (
-        <Typography variant="body2" sx={{ opacity: 0.6, mt: 1 }}>
+        <Typography variant="body2" sx={{ opacity: 0.4 }}>
             {`${total} listener${total !== 1 ? 's' : ''}`}{details.length > 0 && ` (${details.join(', ')})`}
         </Typography>
     );

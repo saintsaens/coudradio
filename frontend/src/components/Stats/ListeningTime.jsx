@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Divider, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useSelector } from "react-redux";
 
 const ListeningTime = () => {
@@ -41,17 +41,19 @@ const ListeningTime = () => {
         .sort(([, a], [, b]) => b - a);
 
     return (
-        <Box sx={{ width: '100%', minWidth: 260 }}>
-            {channels.map(([channel]) => (
-                <Box key={channel} sx={{ display: 'flex', justifyContent: 'space-between', gap: 4, py: 0.5 }}>
-                    <Typography variant="body2">{channel}</Typography>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {formatTime(channel === currentChannel ? elapsedChannel : listeningTimes[channel])}
-                    </Typography>
-                </Box>
-            ))}
-            <Divider sx={{ my: 1 }} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+        <Box>
+            {channels.map(([channel]) => {
+                const active = channel === currentChannel;
+                return (
+                    <Box key={channel} sx={{ display: 'flex', justifyContent: 'space-between', gap: 4, py: 0.25, opacity: active ? 1 : 0.35 }}>
+                        <Typography variant="body2">{channel}</Typography>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            {formatTime(active ? elapsedChannel : listeningTimes[channel])}
+                        </Typography>
+                    </Box>
+                );
+            })}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 4, mt: 2 }}>
                 <Typography variant="body2">total</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{formatTime(elapsedTotal)}</Typography>
             </Box>

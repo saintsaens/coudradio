@@ -1,29 +1,30 @@
 import React from 'react';
-import { Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useSelector } from "react-redux";
 import ListeningTime from "./ListeningTime";
-import ListenerCount from "../Body/ListenerCount";
 
 const StatsBody = () => {
     const { username, isSubscriber, email } = useSelector((state) => state.user);
 
     return (
-        <Stack spacing={2} alignItems="center">
-            <ListenerCount />
-            {username ? (
-                <Typography variant="body1">{`Tracking listen time · ${username} (${email}).`}</Typography>
+        <Box sx={{ width: 360 }}>
+            {!username ? (
+                <Typography variant="body2" sx={{ opacity: 0.4 }}>
+                    log in to track your time.
+                </Typography>
+            ) : !isSubscriber ? (
+                <Typography variant="body2" sx={{ opacity: 0.4 }}>
+                    subscribe for 5€/month to see your listen time.
+                </Typography>
             ) : (
-                <Typography variant="body1">Log in to record your listening time.</Typography>
+                <ListeningTime />
             )}
-            {!isSubscriber &&
-                <Typography>Subscribe for 5€/month to see it.</Typography>
-            }
-            {isSubscriber &&
-                <>
-                    <ListeningTime />
-                </>
-            }
-        </Stack>
+            {username && (
+                <Typography variant="body2" sx={{ opacity: 0.2, mt: 4 }}>
+                    {email}
+                </Typography>
+            )}
+        </Box>
     );
 };
 
