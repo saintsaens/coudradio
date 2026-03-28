@@ -22,20 +22,20 @@ describe('ListenerCount', () => {
         expect(screen.getByText(/1 connected/)).toBeInTheDocument();
     });
 
-    it('shows total with connected and anonymous breakdown', () => {
+    it('shows total with connected count, no anonymous', () => {
         render(2, 3);
         expect(screen.getByText(/5 listeners/)).toBeInTheDocument();
         expect(screen.getByText(/2 connected/)).toBeInTheDocument();
-        expect(screen.getByText(/3 anonymous/)).toBeInTheDocument();
+        expect(screen.queryByText(/anonymous/)).toBeNull();
     });
 
-    it('shows total with only anonymous when authenticated is 0', () => {
+    it('shows 0 connected when authenticated is 0', () => {
         render(0, 5);
         expect(screen.getByText(/5 listeners/)).toBeInTheDocument();
-        expect(screen.getByText(/5 anonymous/)).toBeInTheDocument();
+        expect(screen.getByText(/0 connected/)).toBeInTheDocument();
     });
 
-    it('shows total with only connected when anonymous is 0', () => {
+    it('shows total with connected count when anonymous is 0', () => {
         render(4, 0);
         expect(screen.getByText(/4 listeners/)).toBeInTheDocument();
         expect(screen.getByText(/4 connected/)).toBeInTheDocument();
