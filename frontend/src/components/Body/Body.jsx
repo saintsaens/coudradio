@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import React from "react";
 import Title from "./Title";
+import TrackInfo from "./TrackInfo";
 
 export default function Body({ channelName }) {
     return (
@@ -14,6 +15,7 @@ export default function Body({ channelName }) {
             }}
         >
             <Title channelName={channelName} />
+            <TrackInfo />
         </Box>
     );
 }

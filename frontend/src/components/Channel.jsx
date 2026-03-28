@@ -8,6 +8,7 @@ import Loading from "./Loading";
 import Unavailable from "./Unavailable";
 import { fetchUser, updateLastActivity, updateSessionStartTime, fetchListeningTimes } from "../store/features/userSlice";
 import { fetchListeners } from "../store/features/listenersSlice";
+import { fetchCurrentTrack } from "../store/features/currentTrackSlice";
 import useIsMobile from "../hooks/useIsMobile";
 import ChannelList from "./mobile/ChannelList";
 import { Box, Fade } from "@mui/material";
@@ -54,6 +55,13 @@ export default function Channel({ channelName }) {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [dispatch]);
+
+    useEffect(() => {
+        dispatch(fetchCurrentTrack(channelName));
+
+        const interval = setInterval(() => dispatch(fetchCurrentTrack(channelName)), 30000);
+        return () => clearInterval(interval);
+    }, [dispatch, channelName]);
 
     useEffect(() => {
         if (userId) {
