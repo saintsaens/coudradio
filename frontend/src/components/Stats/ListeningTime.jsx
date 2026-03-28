@@ -41,7 +41,7 @@ const ListeningTime = () => {
     return (
         <>
             <Typography variant="h3">{formatTime(elapsedChannel)}</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.6 }}>total: {formatTime(elapsedTotal)}</Typography>
+            <Typography variant="body2" sx={{ opacity: 0.6 }}>{`total: ${formatTime(elapsedTotal)}`}</Typography>
         </>
     );
 };
