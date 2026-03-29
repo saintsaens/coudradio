@@ -24,6 +24,7 @@ export const getTrackList = async (channelName) => {
         });
         return JSON.parse(Buffer.concat(chunks).toString('utf-8'));
     } catch (error) {
+        if (error.code === 'NoSuchKey') return null;
         console.error(`[getTrackList] MinIO error (bucket="${bucket}" path="${objectPath}"):`, error);
         throw new Error(`Failed to retrieve track list for channel: ${channelName}`);
     }

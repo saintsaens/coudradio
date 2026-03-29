@@ -20,14 +20,6 @@ const iso8601ToSeconds = (duration) => {
     return hours + minutes + seconds;
 };
 
-const parseTrackName = (filename) => {
-    const base = filename.replace(/\.[^.]+$/, '');
-    const sep = ' - ';
-    const idx = base.indexOf(sep);
-    if (idx === -1) return { artist: null, name: base };
-    return { artist: base.slice(0, idx), name: base.slice(idx + sep.length) };
-};
-
 const buildCache = async (channel) => {
     const stream = await getMpd(channel);
     const xml = await streamToString(stream);
@@ -36,8 +28,8 @@ const buildCache = async (channel) => {
     const durations = periods.map((p) => iso8601ToSeconds(p.duration));
     const total = durations.reduce((sum, d) => sum + d, 0);
 
-    const filenames = await getTrackList(channel);
-    const tracks = filenames.map(parseTrackName);
+    const tracks = await getTrackList(channel);
+    if (!tracks) console.info(`[metadataService] No tracks.json found for channel "${channel}", track info will be unavailable.`);
 
     cache.set(channel, { tracks, durations, total });
 };
@@ -47,6 +39,7 @@ export const getCurrentTrack = async (channel) => {
         await buildCache(channel);
     }
     const { tracks, durations, total } = cache.get(channel);
+    if (!tracks) return null;
     let position = (Date.now() / 1000) % total;
     for (let i = 0; i < durations.length; i++) {
         if (position < durations[i]) return tracks[i];

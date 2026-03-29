@@ -19,12 +19,12 @@ describe('getCurrentTrack', () => {
     });
 
     it('returns the current track as JSON', async () => {
-        const mockTrack = { name: 'Chill Beats', artist: 'Lo-Fi DJ' };
+        const mockTrack = 'Chill Beats';
         vi.mocked(metadataService.getCurrentTrack).mockResolvedValue(mockTrack);
 
         await getCurrentTrack(req, res, next);
 
-        expect(res.json).toHaveBeenCalledWith(mockTrack);
+        expect(res.json).toHaveBeenCalledWith('Chill Beats');
     });
 
     it('calls next with an error if the service throws', async () => {
