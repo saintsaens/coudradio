@@ -37,6 +37,7 @@ const audioPlayerSlice = createSlice({
     playlistDuration: 25000,
     error: false,
     playing: false,
+    loadingProgress: 0,
   },
   reducers: {
     setMuted(state, action) {
@@ -51,17 +52,24 @@ const audioPlayerSlice = createSlice({
     setPlaying(state, action) {
       state.playing = action.payload;
     },
+    setLoadingProgress(state, action) {
+      state.loadingProgress = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(checkStream.pending, (state) => {
+        state.loadingProgress = 0;
+      })
       .addCase(checkStream.rejected, (state, _action) => {
         state.error = true;
       })
       .addCase(checkStream.fulfilled, (state) => {
         state.error = false;
+        state.loadingProgress = 50;
       });
   },
 });
 
-export const { setMuted, setPlaylistDuration, setError, setPlaying } = audioPlayerSlice.actions;
+export const { setMuted, setPlaylistDuration, setError, setPlaying, setLoadingProgress } = audioPlayerSlice.actions;
 export default audioPlayerSlice.reducer;

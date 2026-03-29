@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import dashjs from "dashjs";
 import { computeStartTime } from "../utils/time.js";
 import { useDispatch } from "react-redux";
-import { setMuted, checkStream, setPlaying } from "../store/features/audioPlayerSlice.js";
+import { setMuted, checkStream, setPlaying, setLoadingProgress } from "../store/features/audioPlayerSlice.js";
 import Background from "./Background.jsx";
 
 const AudioPlayer = ({ audioRef, channelName }) => {
@@ -27,6 +27,12 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       dispatch(setMuted(true));
       reloadPlayer(video, start);
     });
+    player.on(dashjs.MediaPlayer.events.BUFFER_LEVEL_UPDATED, (e) => {
+      const bufferLevel = e.bufferLevel ?? 0;
+      const progress = Math.min(Math.round(50 + (bufferLevel / 5) * 50), 99);
+      dispatch(setLoadingProgress(progress));
+    });
+
     player.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, () => {
       dispatch(setPlaying(true));
       if ('mediaSession' in navigator) {

@@ -8,7 +8,7 @@ import reducer, {
     checkStream,
 } from '../../store/features/audioPlayerSlice.js';
 
-const initialState = { isMuted: true, playlistDuration: 25000, error: false, playing: false };
+const initialState = { isMuted: true, playlistDuration: 25000, error: false, playing: false, loadingProgress: 0 };
 
 const makeStore = (preloadedState) =>
     configureStore({ reducer: { audioPlayer: reducer }, preloadedState });
