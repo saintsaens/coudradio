@@ -3,7 +3,7 @@ import React from "react";
 import Title from "./Title";
 import TrackInfo from "./TrackInfo";
 
-export default function Body({ channelName }) {
+export default function Body({ channelName, isMuted }) {
     return (
         <Box
             sx={{
@@ -16,7 +16,7 @@ export default function Body({ channelName }) {
         >
             <Title channelName={channelName} />
             <Box sx={{ height: "1.5em" }}>
-                <TrackInfo />
+                {!isMuted && <TrackInfo />}
             </Box>
         </Box>
     );

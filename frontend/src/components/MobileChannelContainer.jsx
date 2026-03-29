@@ -12,7 +12,7 @@ export default function MobileChannelContainer({ channelName, onShowChannels, is
                 {!isMuted && <Typography variant="body2">Tap: mute</Typography>}
             </Grid>
             <Grid size={12} sx={{ height: "60%" }}>
-                <Body channelName={channelName} />
+                <Body channelName={channelName} isMuted={isMuted} />
             </Grid>
             <Grid size={12} sx={{ height: "20%", display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
                 <Button
