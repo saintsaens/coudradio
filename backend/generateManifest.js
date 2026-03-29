@@ -35,7 +35,7 @@ const filenames = raw
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line && ALLOWED_EXTENSIONS.some((ext) => line.toLowerCase().endsWith(ext)))
-    .map((line) => path.basename(line));
+    .map((line) => path.basename(line, path.extname(line)).replace(/_/g, ' '));
 
 if (filenames.length === 0) {
     console.error('No valid audio filenames found in the file.');
