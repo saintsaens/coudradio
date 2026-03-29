@@ -2,46 +2,40 @@
  * Generates a tracks.json manifest for an existing channel.
  *
  * Usage:
- *   node generateManifest.js <channelName> <filenames-file>
+ *   node generateManifest.js <channelName>
  *
- * <filenames-file> must be a newline-separated list of audio filenames
- * in the correct alphabetical order (matching MPD Period order).
- *
- * For channels with 1000+ files (where listObjects fails), produce the
- * file using the MinIO CLI (use --json to handle filenames with spaces):
- *   mc ls alias/<channelName> --recursive --json | jq -r '.key' | sort > filenames.txt
- *   node generateManifest.js <channelName> filenames.txt
+ * Fetches the list of audio files directly from MinIO (sorted alphabetically),
+ * strips extensions, replaces underscores with spaces, and uploads tracks.json.
  */
-import fs from 'fs/promises';
+import path from 'path';
 import dotenv from 'dotenv';
+import { getTracks } from './repositories/trackRepository.js';
 import { uploadTrackList } from './repositories/mpdRepository.js';
 
 dotenv.config();
 
-const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.m4v', '.flac', '.mkv', '.mp4', '.webm'];
-
 const channelName = process.argv[2];
-const filenamesFile = process.argv[3];
 
-if (!channelName || !filenamesFile) {
-    console.error('Usage: node generateManifest.js <channelName> <filenames-file>');
+if (!channelName) {
+    console.error('Usage: node generateManifest.js <channelName>');
     process.exit(1);
 }
 
-import path from 'path';
+console.log(`Fetching tracks for "${channelName}" from MinIO…`);
+const rawFilenames = await getTracks(channelName);
+const tracks = rawFilenames
+    .sort()
+    .map((f) => {
+        const folder = path.dirname(f).replace(/_/g, ' ');
+        const name = path.basename(f, path.extname(f)).replace(/_/g, ' ');
+        return folder === '.' ? name : `${folder} - ${name}`;
+    });
 
-const raw = await fs.readFile(filenamesFile, 'utf-8');
-const filenames = raw
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line && ALLOWED_EXTENSIONS.some((ext) => line.toLowerCase().endsWith(ext)))
-    .map((line) => path.basename(line, path.extname(line)).replace(/_/g, ' '));
-
-if (filenames.length === 0) {
-    console.error('No valid audio filenames found in the file.');
+if (tracks.length === 0) {
+    console.error('No audio files found for this channel.');
     process.exit(1);
 }
 
-console.log(`Uploading manifest for "${channelName}" with ${filenames.length} tracks…`);
-await uploadTrackList(channelName, filenames);
+console.log(`Uploading manifest with ${tracks.length} tracks…`);
+await uploadTrackList(channelName, tracks);
 console.log(`Done. tracks.json written to mpd/${channelName}/tracks.json`);
