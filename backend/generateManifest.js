@@ -8,8 +8,8 @@
  * in the correct alphabetical order (matching MPD Period order).
  *
  * For channels with 1000+ files (where listObjects fails), produce the
- * file using the MinIO CLI:
- *   mc ls alias/<channelName> --recursive | awk '{print $NF}' | sort > filenames.txt
+ * file using the MinIO CLI (use --json to handle filenames with spaces):
+ *   mc ls alias/<channelName> --recursive --json | jq -r '.key' | sort > filenames.txt
  *   node generateManifest.js <channelName> filenames.txt
  */
 import fs from 'fs/promises';
@@ -28,11 +28,14 @@ if (!channelName || !filenamesFile) {
     process.exit(1);
 }
 
+import path from 'path';
+
 const raw = await fs.readFile(filenamesFile, 'utf-8');
 const filenames = raw
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => line && ALLOWED_EXTENSIONS.some((ext) => line.toLowerCase().endsWith(ext)));
+    .filter((line) => line && ALLOWED_EXTENSIONS.some((ext) => line.toLowerCase().endsWith(ext)))
+    .map((line) => path.basename(line));
 
 if (filenames.length === 0) {
     console.error('No valid audio filenames found in the file.');
