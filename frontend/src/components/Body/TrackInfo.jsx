@@ -6,7 +6,7 @@ export default function TrackInfo() {
     const track = useSelector((state) => state.currentTrack.track);
     if (!track) return null;
     return (
-        <Typography variant="body2" sx={{ opacity: 0.6, mt: 0.5 }}>
+        <Typography variant="body2" sx={{ opacity: 0.5, mt: 0.5 }}>
             {track}
         </Typography>
     );
