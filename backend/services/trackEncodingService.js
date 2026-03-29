@@ -19,7 +19,7 @@ export const encodeTrack = async (index, playlist, channelName) => {
       .noVideo()
       .audioCodec('aac')
       .audioBitrate('320k')
-      .audioFilters('loudnorm')
+      .audioFilters('loudnorm=I=-14:TP=-1:LRA=11')
       .format('dash')
       .outputOptions([
         '-y',                           // Overwrite output files without asking
