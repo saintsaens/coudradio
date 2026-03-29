@@ -15,7 +15,9 @@ export default function Body({ channelName }) {
             }}
         >
             <Title channelName={channelName} />
-            <TrackInfo />
+            <Box sx={{ height: "1.5em" }}>
+                <TrackInfo />
+            </Box>
         </Box>
     );
 }
