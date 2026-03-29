@@ -33,7 +33,7 @@ export const getTrackList = async (channelName) => {
 export const uploadTrackList = async (channelName, filenames) => {
     const bucket = process.env.MINIO_MPD_BUCKET;
     const objectPath = `${process.env.MINIO_MPD_PATH}/${channelName}/tracks.json`;
-    const content = Buffer.from(JSON.stringify(filenames), 'utf-8');
+    const content = Buffer.from(JSON.stringify(filenames, null, 2), 'utf-8');
     try {
         await minioClient.putObject(bucket, objectPath, content, content.length, { 'Content-Type': 'application/json' });
         return objectPath;
