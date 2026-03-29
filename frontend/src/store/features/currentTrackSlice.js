@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { setCurrentChannel } from './channelSwitcherSlice';
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -13,13 +14,15 @@ export const fetchCurrentTrack = createAsyncThunk('currentTrack/fetchCurrentTrac
 const currentTrackSlice = createSlice({
     name: 'currentTrack',
     initialState: {
-        name: null,
-        artist: null,
+        track: null,
     },
+    reducers: {},
     extraReducers: (builder) => {
         builder.addCase(fetchCurrentTrack.fulfilled, (state, action) => {
-            state.name = action.payload.name;
-            state.artist = action.payload.artist;
+            state.track = action.payload;
+        });
+        builder.addCase(setCurrentChannel, (state) => {
+            state.track = null;
         });
     },
 });
