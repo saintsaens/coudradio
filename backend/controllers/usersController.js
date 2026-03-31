@@ -1,135 +1,85 @@
 import * as usersService from "../services/usersService.js";
 import { computeTimeSpent } from "../utils/durations.js";
+import { upsertListeningTime } from "../repositories/usersRepository.js";
 
-export const createUser = async (req, res) => {
-    const { username, password, email } = req.body;
-
-    if (!username || !password || !email) {
-        return res.status(400).json({ error: "Missing fields" });
-    }
-
+export const getListeningTimes = async (req, res, next) => {
     try {
-        const newUser = await usersService.createUser(username, password, email);
-        return res.status(201).json({ message: "User created successfully", user: newUser });
+        const userId = req.user.id;
+        const times = await usersService.getListeningTimesByUser(userId);
+        return res.status(200).json(times);
     } catch (err) {
-        console.error(err);  // Log the error for debugging
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };
 
-export const updateUser = async (req, res) => {
-    const { id } = req.params;
-    const { username, password, role, sessionStartTime, lastActivity, email } = req.body;
-
-    if (!username && !password && !role && !sessionStartTime && !lastActivity && !email) {
-        return res.status(400).json({ error: "At least one field must be provided" });
-    }
-
+export const updateUserActivity = async (req, res, next) => {
     try {
-        const updatedUser = await usersService.updateUser(id, { username, password, role, sessionStartTime, lastActivity, email });
+        const userId = req.user.id;
+        const { channel } = req.body;
+        const lastActivityTime = new Date();
+        const lastRecordedActivity = req.user.lastActivity || lastActivityTime;
+        const deltaTime = computeTimeSpent(lastRecordedActivity, lastActivityTime);
+
+        req.user.lastActivity = lastActivityTime;
+        req.user.timeSpent = (req.user.timeSpent || 0) + deltaTime;
+
+        // TODO: users.time_spent duplicates the SUM of listening_time.time_spent.
+        // Consider dropping users.time_spent and computing the total from listening_time instead.
+        const [updatedUser] = await Promise.all([
+            usersService.updateUser(userId, {
+                lastActivityTime,
+                timeSpent: req.user.timeSpent
+            }),
+            channel ? upsertListeningTime(userId, channel, deltaTime) : Promise.resolve(),
+        ]);
 
         if (!updatedUser) {
             return res.status(404).json({ error: "User not found" });
         }
-
-        return res.status(200).json({ message: "User updated successfully", user: updatedUser });
+        return res.status(200).json({
+            message: "User activity updated successfully",
+            user: updatedUser
+        });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };
 
-export const updateUserActivity = async (req, res) => {
-    if (req.isAuthenticated()) {
-        try {
-            // Get user data from the current session
-            const userId = req.user.id;
-            const sessionStartTime = req.user.sessionStartTime;
-
-            // Compute new values for activity and time spent
-            const lastActivityTime = new Date();
-            const newTimeSpent = computeTimeSpent(sessionStartTime, lastActivityTime);
-
-            // Update session data
-            req.user.lastActivity = lastActivityTime;
-            const totalTimeSpent = req.user.timeSpent + newTimeSpent;
-            req.user.timeSpent = totalTimeSpent;
-
-            // Update database as well (persist the change)
-            const updatedUser = await usersService.updateUser(userId, { lastActivityTime, timeSpent: totalTimeSpent});
-            if (!updatedUser) {
-                return res.status(404).json({ error: "User not found" });
-            }
-            return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Internal server error" });
-        }
-    }
-    else {
-        return res.status(401).json({ err: "Not logged in" });
-    }
-};
-
-export const updateSessionStartTime = async (req, res) => {
-    if (req.isAuthenticated()) {
-        try {
-            const userId = req.user.id;
-
-            // Compute new valeus for session start time and last activity
-            const lastActivityTime = new Date();
-            const sessionStartTime = lastActivityTime;
-            
-            // Update session data
-            req.user.lastActivity = lastActivityTime;
-            req.user.sessionStartTime = sessionStartTime;
-            
-            // Update database as well (persist the change)
-            const updatedUser = usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
-            if (!updatedUser) {
-                return res.status(404).json({ error: "User not found" });
-            }
-
-            return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Internal server error" });
-        }
-    }
-    else {
-        return res.status(401).json({ err: "Not logged in" });
-    }
-};
-
-export const deleteUser = async (req, res) => {
-    const { id } = req.params;
-
+export const updateSessionStartTime = async (req, res, next) => {
     try {
-        const deletedUser = await usersService.deleteUser(id);
+        const userId = req.user.id;
+        const lastActivityTime = new Date();
+        const sessionStartTime = lastActivityTime;
 
-        if (!deletedUser) {
+        req.user.lastActivity = lastActivityTime;
+        req.user.sessionStartTime = sessionStartTime;
+
+        const updatedUser = await usersService.updateUser(userId, { sessionStartTime, lastActivityTime });
+        if (!updatedUser) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        return res.status(200).json({ message: "User deleted successfully" });
+        return res.status(200).json({ message: "User activity updated successfully", user: updatedUser });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error" });
+        next(err);
     }
 };
 
-export const getUserById = async (req, res) => {
-    const { id } = req.params;
-
+export const getListeners = async (req, res, next) => {
     try {
-        const user = await usersService.getUserById(id);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        return res.status(200).json(user);
+        const counts = await usersService.getListenerCounts();
+        return res.status(200).json(counts);
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        next(err);
+    }
+};
+
+export const getUserRank = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const result = await usersService.getUserRankAndTotal(id);
+        return res.status(200).json({ rank: result.rank, total: result.total });
+    } catch (err) {
+        next(err);
     }
 };

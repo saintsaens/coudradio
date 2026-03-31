@@ -23,8 +23,18 @@ const passportLoader = (app) => {
 
             if (!credentials) {
                 // User does not exist, create one
-                const { id, username, subject, provider } = await createGoogleCredential(profile);
-                return cb(null, { id, username, subject, provider });
+                const { id } = await createGoogleCredential(profile);
+                const newUser = await getUserById(id);
+                return cb(null, {
+                    id: newUser.id,
+                    username: newUser.username,
+                    role: newUser.role,
+                    sessionStartTime: newUser.session_start_time,
+                    lastActivity: newUser.last_activity_time,
+                    timeSpent: newUser.time_spent,
+                    subscribed: newUser.subscribed,
+                    email: newUser.email,
+                });
             } else {
                 // User exists, fetch their info
                 const userId = credentials.user_id

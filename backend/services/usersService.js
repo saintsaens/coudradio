@@ -1,33 +1,6 @@
-import bcrypt from "bcrypt";
 import * as usersRepository from "../repositories/usersRepository.js"
-
-const saltRounds = 10;
-
-export const createUser = async (username, password, email) => {
-    if (!username || !password || !email) {
-        throw new Error("Username, password and email are required");
-    }
-
-    const hashedPw = await bcrypt.hash(password, saltRounds);
-    const role = "user";
-    const sessionStartTime = new Date();
-    const lastActivityTime = sessionStartTime;
-    const timeSpent = 0;
-    const subscribed = false;
-    
-    const result = await usersRepository.createUser(
-        username,
-        hashedPw,
-        role,
-        sessionStartTime,
-        lastActivityTime,
-        timeSpent,
-        subscribed,
-        email
-    );
-    
-    return result;
-};
+import { getRecentConnectionCount } from "../loaders/connectionTracker.js"
+import { NotFoundError } from "../errors.js"
 
 export const createUserWithoutPassword = async (username, email) => {
     if (!username || !email) {
@@ -61,9 +34,8 @@ export const getUserById = async (id) => {
     return result;
 };
 
-export const updateUser = async (id, { username, password, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email }) => {
-    const hashedPw = password ? await bcrypt.hash(password, saltRounds) : null;
-    const result = await usersRepository.updateUser(id, { username, hashedPw, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email });
+export const updateUser = async (id, { username, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email }) => {
+    const result = await usersRepository.updateUser(id, { username, role, sessionStartTime, lastActivityTime, timeSpent, subscribed, email });
 
     return result;
 };
@@ -74,8 +46,21 @@ export const addTimeSpent = async (id, timeToAdd) => {
     return result;
 };
 
-export const deleteUser = async (id) => {
-    const result = await usersRepository.deleteUser(id);
+export const getListenerCounts = async () => {
+    const authenticated = await usersRepository.getActiveAuthenticatedCount();
+    const total = getRecentConnectionCount();
+    const anonymous = Math.max(0, total - authenticated);
+    return { authenticated, anonymous };
+};
 
+export const getListeningTimesByUser = async (userId) => {
+    return await usersRepository.getListeningTimesByUser(userId);
+};
+
+export const getUserRankAndTotal = async (id) => {
+    const result = await usersRepository.getUserRankAndTotal(id);
+    if (!result) {
+        throw new NotFoundError("User not found");
+    }
     return result;
 };

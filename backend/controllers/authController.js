@@ -17,9 +17,12 @@ export const logout = async (req, res) => {
     });
 };
 
-export const getUserProfile = async (req, res) => {
-    if (req.isAuthenticated()) {
-        // Fetch user subscription status from the database (not from the session)
+export const getUserProfile = async (req, res, next) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    try {
         const user = await usersService.getUserById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
@@ -35,7 +38,7 @@ export const getUserProfile = async (req, res) => {
             subscribed: req.user.subscribed,
             email: req.user.email
         });
-    } else {
-        res.status(401).json({ error: "User not authenticated" });
+    } catch (err) {
+        next(err);
     }
 };

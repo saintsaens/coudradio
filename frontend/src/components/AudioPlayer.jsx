@@ -1,20 +1,13 @@
 import React, { useEffect } from "react";
 import dashjs from "dashjs";
 import { computeStartTime } from "../utils/time.js";
-import { useDispatch, useSelector } from "react-redux";
-import { setMuted, checkStream, setPlaying } from "../store/features/audioPlayerSlice.js";
+import { useDispatch } from "react-redux";
+import { setMuted, checkStream, setPlaying, setLoadingProgress } from "../store/features/audioPlayerSlice.js";
 import Background from "./Background.jsx";
 
 const AudioPlayer = ({ audioRef, channelName }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const src = `${backendUrl}/${channelName}`;
-
-  const channels = JSON.parse(import.meta.env.VITE_CHANNELS || "[]");
-  const channel = channels.find((c) => c.name === channelName);
-  if (!channel) {
-    console.error(`Channel "${channelName}" not found`);
-  }
-  const playlistDuration = channel?.duration || 0;
 
   const dispatch = useDispatch();
   let player = null; // Keep track of the Dash.js player instance
@@ -23,6 +16,7 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     player = dashjs.MediaPlayer().create();
 
     player.initialize();
+    player.updateSettings({ debug: { logLevel: dashjs.Debug.LOG_LEVEL_ERROR } });
     player.attachView(video);
     player.setAutoPlay(true);
     player.attachSource(src, start);
@@ -33,8 +27,23 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       dispatch(setMuted(true));
       reloadPlayer(video, start);
     });
+    player.on(dashjs.MediaPlayer.events.BUFFER_LEVEL_UPDATED, (e) => {
+      const bufferLevel = e.bufferLevel ?? 0;
+      const progress = Math.min(Math.round(50 + (bufferLevel / 5) * 50), 99);
+      dispatch(setLoadingProgress(progress));
+    });
+
     player.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, () => {
       dispatch(setPlaying(true));
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: channelName,
+          artist: 'Coudradio',
+          artwork: [{ src: '/icon-512.png', sizes: '512x512', type: 'image/png' }],
+        });
+        navigator.mediaSession.setActionHandler('play', () => video.play());
+        navigator.mediaSession.setActionHandler('pause', () => video.pause());
+      }
     });
   };
 
@@ -62,7 +71,7 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       return;
     }
 
-    const start = computeStartTime(playlistDuration);
+    const start = computeStartTime(result.payload);
 
     video.loop = true;
     dispatch(setMuted(video.muted));
@@ -75,6 +84,7 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     return () => {
       cleanupPlayer(); // Ensure cleanup when the component unmounts or reinitializes
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, dispatch]);
 
   return (

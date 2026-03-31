@@ -2,9 +2,9 @@ import React from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { setMuted } from "../../store/features/audioPlayerSlice";
 import MobileChannelContainer from "../MobileChannelContainer";
-import { Typography, Button } from "@mui/material";
+import { Typography, Box } from "@mui/material";
 
-const MobileMuteToggler = ({ audioRef, channelName }) => {
+const MobileMuteToggler = ({ audioRef, channelName, onShowChannels }) => {
     const isMuted = useSelector((state) => state.audioPlayer.isMuted);
     const dispatch = useDispatch();
 
@@ -17,46 +17,24 @@ const MobileMuteToggler = ({ audioRef, channelName }) => {
     };
 
     return (
-        <>
-            {isMuted
-                ?
-                <Button
-                    disableRipple
-                    color="text.primary"
-                    onClick={handleToggleMute}
-                    sx={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "background.paper",
-                        zIndex: 1000,
-                    }}
-                >
-                    <Typography variant="h2">Unmute</Typography>
-                </Button>
-                :
-                <>
-                    <Button
-                        disableRipple
-                        color="text.primary"
-                        onClick={handleToggleMute}
-                        sx={{
-                            position: "fixed",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            backgroundColor: "transparent",
-                            zIndex: 1000,
-                        }}
-                    >
-                    </Button>
-                    <MobileChannelContainer channelName={channelName} onClick={handleToggleMute} />
-                </>
-            }
-        </>
+        <Box
+            onClick={handleToggleMute}
+            sx={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                WebkitTapHighlightColor: 'transparent',
+            }}
+        >
+            <MobileChannelContainer channelName={channelName} onShowChannels={onShowChannels} isMuted={isMuted} />
+            {isMuted && (
+                <Typography variant="h2" sx={{ position: 'absolute', left: 0, right: 0, textAlign: 'center' }}>tap to unmute</Typography>
+            )}
+        </Box>
     );
 };
 

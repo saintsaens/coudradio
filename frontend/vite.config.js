@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -17,6 +18,54 @@ if (isLocal) {
 }
 
 export default defineConfig({
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
+                    'mui-vendor': ['@mui/material', '@mui/system', '@emotion/react', '@emotion/styled'],
+                    'dashjs': ['dashjs'],
+                },
+            },
+        },
+    },
+    plugins: [
+        VitePWA({
+            registerType: 'autoUpdate',
+            workbox: {
+                runtimeCaching: [
+                    {
+                        // Cache MPD files: matches /api/{channelName} but not /api/users/...
+                        urlPattern: new RegExp(
+                            `^${process.env.VITE_BACKEND_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/[^\\/]+$`
+                        ),
+                        handler: 'StaleWhileRevalidate',
+                        options: {
+                            cacheName: 'mpd-cache',
+                            expiration: {
+                                maxEntries: 20,
+                                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                            },
+                        },
+                    },
+                ],
+            },
+            manifest: {
+                name: 'Coudradio',
+                short_name: 'Coudradio',
+                description: 'Radio streaming',
+                theme_color: '#041C32',
+                background_color: '#041C32',
+                display: 'standalone',
+                start_url: '/',
+                icons: [
+                    { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+                    { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+                ],
+            },
+        }),
+    ],
     server: isLocal
         ? {
               https: {

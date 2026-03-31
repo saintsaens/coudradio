@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setSelectedIndex, closeSwitcher, toggleSwitcher } from "../../store/features/channelSwitcherSlice";
+import { prefetchMPDDuration } from "../../utils/time.js";
 import { Modal, Box, List, ListItem, ListItemButton, ListItemText, InputBase } from "@mui/material";
 
 const ChannelSwitcher = () => {
@@ -9,6 +10,7 @@ const ChannelSwitcher = () => {
     const { channelList } = useSelector((state) => state.user);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -50,8 +52,23 @@ const ChannelSwitcher = () => {
     };
 
     const handleSearchChange = (event) => {
-        setSearchQuery(event.target.value);
+        const value = event.target.value;
+        if (value === '?') {
+            const others = listItems.filter(item => item !== currentChannel);
+            const pool = others.length > 0 ? others : listItems;
+            const random = pool[Math.floor(Math.random() * pool.length)];
+            navigate(`/${random}`);
+            dispatch(closeSwitcher());
+            return;
+        }
+        setSearchQuery(value);
     };
+
+    useEffect(() => {
+        const item = filteredItems[selectedIndex];
+        if (item) prefetchMPDDuration(`${backendUrl}/${item}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedIndex, filteredItems]);
 
     useEffect(() => {
         document.addEventListener('keydown', handleKeyPress);
@@ -67,6 +84,7 @@ const ChannelSwitcher = () => {
         return () => {
             document.removeEventListener('keydown', handleKeyPress);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isSwitcherOpen, filteredItems]);
 
     return (
@@ -79,9 +97,9 @@ const ChannelSwitcher = () => {
             <Box
                 sx={{
                     position: 'absolute',
-                    top: '50%',
+                    top: '30%',
                     left: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    transform: 'translateX(-50%)',
                     width: 500,
                     bgcolor: 'var(--third-color)',
                     boxShadow: 24,
@@ -89,17 +107,29 @@ const ChannelSwitcher = () => {
                     pointerEvents: "none"
                 }}
             >
-                <InputBase
-                    inputRef={searchInputRef}
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    fullWidth
-                    autoFocus
-                    sx={{
-                        padding: 1,
-                        fontSize: "2rem"
-                    }}
-                />
+                <Box sx={{ position: 'relative' }}>
+                    <InputBase
+                        inputRef={searchInputRef}
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        fullWidth
+                        autoFocus
+                        sx={{
+                            padding: 1,
+                            fontSize: "2rem"
+                        }}
+                    />
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: 4,
+                        right: 8,
+                        fontSize: '0.65rem',
+                        opacity: 0.4,
+                        pointerEvents: 'none',
+                    }}>
+                        ?: random
+                    </Box>
+                </Box>
                 <List disablePadding
                     sx={{
                         paddingBottom: 0.5,
@@ -118,7 +148,8 @@ const ChannelSwitcher = () => {
                                     dispatch(closeSwitcher());
                                 }}
                                 sx={{
-                                    padding: 1,
+                                    paddingX: 1,
+                                    paddingY: 0.25,
                                     color: selectedIndex === index ? 'primary.main' : 'inherit', // Change text color when selected
                                 }}
                             >

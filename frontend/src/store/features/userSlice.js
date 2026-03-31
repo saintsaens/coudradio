@@ -23,10 +23,12 @@ export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
     throw new Error('Not logged in');
 });
 
-export const updateLastActivity = createAsyncThunk('user/updateLastActivity', async () => {
+export const updateLastActivity = createAsyncThunk('user/updateLastActivity', async (channel) => {
     const response = await fetch(`${baseUrl}/users/activity`, {
         method: 'PATCH',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel }),
     });
 
     if (!response.ok) {
@@ -36,8 +38,14 @@ export const updateLastActivity = createAsyncThunk('user/updateLastActivity', as
     return await response.json();
 });
 
+export const fetchListeningTimes = createAsyncThunk('user/fetchListeningTimes', async () => {
+    const response = await fetch(`${baseUrl}/users/listening-times`, { credentials: 'include' });
+    if (!response.ok) throw new Error('Failed to fetch listening times');
+    return await response.json();
+});
+
 export const updateSessionStartTime = createAsyncThunk('user/updateSessionStartTime', async () => {
-    const response = await fetch(`${baseUrl}/users/close`, {
+    const response = await fetch(`${baseUrl}/users/open`, {
         method: 'PATCH',
         credentials: 'include',
     });
@@ -58,6 +66,8 @@ const userSlice = createSlice({
         sessionStartTime: '',
         lastActivity: '',
         timeSpent: 0,
+        listeningTimes: {},
+        listeningTimesFetchedAt: null,
         isSubscriber: false,
         email: '',
         channelList: [],
@@ -85,6 +95,12 @@ const userSlice = createSlice({
                     ? import.meta.env.VITE_CHANNELS_LOGGEDIN
                     : import.meta.env.VITE_CHANNELS_DEFAULT || '';
                 state.channelList = raw.split(',');
+            })
+            .addCase(fetchListeningTimes.fulfilled, (state, action) => {
+                state.listeningTimes = Object.fromEntries(
+                    action.payload.map(({ channel, timeSpent }) => [channel, timeSpent])
+                );
+                state.listeningTimesFetchedAt = Date.now();
             })
             .addCase(fetchUser.rejected, (state, action) => {
                 state.status = 'failed';

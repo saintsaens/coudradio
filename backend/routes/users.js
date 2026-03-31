@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { createUser, deleteUser, getUserById, updateUser, updateUserActivity, updateSessionStartTime } from "../controllers/usersController.js";
+import { updateUserActivity, updateSessionStartTime, getUserRank, getListeners, getListeningTimes } from "../controllers/usersController.js";
+import { isAuthenticated } from "../middleware/authMiddleware.js";
 
 export const usersRouter = Router();
 
-usersRouter.post('/signup', createUser);
-usersRouter.get('/:id', getUserById);
-usersRouter.put('/:id', updateUser);
-usersRouter.patch('/activity', updateUserActivity);
-usersRouter.patch('/close', updateSessionStartTime);
-usersRouter.delete('/delete/:id', deleteUser);
+usersRouter.get('/listeners', getListeners);
+usersRouter.get('/listening-times', isAuthenticated, getListeningTimes);
+usersRouter.get('/:id/rank', getUserRank);
+usersRouter.patch('/activity', isAuthenticated, updateUserActivity);
+usersRouter.patch('/open', isAuthenticated, updateSessionStartTime);

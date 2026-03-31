@@ -2,13 +2,15 @@ import ffmpeg from 'fluent-ffmpeg';
 import path from "path";
 import fs from "fs";
 import util from "util";
+import { localTrackDirectoryFor, ensureDirectoryExists } from "./channelCreationService/fileSystemService.js";
 
 const unlink = util.promisify(fs.unlink);
 
-export const encodeTrack = (index, playlist, channelPath) => {
-  console.log(`Creating segments and mpd for track${index}…`);
+export const encodeTrack = async (index, playlist, channelName) => {
+  const trackDirectory = localTrackDirectoryFor(channelName, index);
+  await ensureDirectoryExists(trackDirectory);
   const currentTrack = playlist[index];
-  const playlistPath = `${channelPath}/track${index}.mpd`;  // Output MPD file path
+  const playlistPath = `${trackDirectory}/track${index}.mpd`;
 
   return new Promise((resolve, reject) => {
     const command = ffmpeg()
@@ -17,6 +19,7 @@ export const encodeTrack = (index, playlist, channelPath) => {
       .noVideo()
       .audioCodec('aac')
       .audioBitrate('320k')
+      .audioFilters('loudnorm=I=-14:TP=-1:LRA=11')
       .format('dash')
       .outputOptions([
         '-y',                           // Overwrite output files without asking
@@ -51,7 +54,7 @@ export const encodeTracks = async (playlist, channel) => {
     console.log(`Encoding track${index}…`);
     const singleTrackMpdPath = await encodeTrack(index, playlist, channelPath);
 
-Á    // Store the MPD path
+    // Store the MPD path
     mpdPaths.push(singleTrackMpdPath);
   }
 

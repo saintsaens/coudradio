@@ -2,6 +2,7 @@ import React from 'react';
 import { Stack, Box } from '@mui/material';
 import StatsCommands from "./StatsCommands";
 import StatsBody from "./StatsBody";
+import Footer from "../Footer/Footer";
 
 const Stats = () => {
     return (
@@ -21,7 +22,10 @@ const Stats = () => {
                     alignItems: "center",
                 }}>
                 <StatsBody />
-            </Stack >
+            </Stack>
+            <Box sx={{ height: "20%" }}>
+                <Footer />
+            </Box>
         </Stack>
     );
 };

@@ -1,0 +1,40 @@
+name: Run test suite
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+
+jobs:
+  run-test-suite:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: backend
+
+      - name: Run backend tests
+        run: npm test -- --run
+        working-directory: backend
+        env:
+          MINIO_ENDPOINT: localhost
+          MINIO_ACCESS_KEY: test
+          MINIO_SECRET_KEY: test
+          DATABASE_URL: postgresql://localhost/test
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Run frontend tests
+        run: npm test -- --run
+        working-directory: frontend

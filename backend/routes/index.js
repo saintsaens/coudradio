@@ -3,6 +3,7 @@ import { segmentRouter } from './segment.js';
 import { usersRouter } from "./users.js";
 import { authRouter } from "./auth.js";
 import { stripeRouter } from "./stripe.js";
+import { metadataRouter } from "./metadata.js";
 
 const mountRoutes = (app) => {
     app.use('/api/', streamRouter);
@@ -10,6 +11,7 @@ const mountRoutes = (app) => {
     app.use('/api/users', usersRouter);
     app.use('/api/auth', authRouter);
     app.use('/api/payment', stripeRouter);
+    app.use('/api/metadata', metadataRouter);
 }
 
 export default mountRoutes;

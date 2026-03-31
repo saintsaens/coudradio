@@ -2,6 +2,7 @@ import express from 'express';
 import corsLoader from "./loaders/corsLoader.js";
 import morganLoader from "./loaders/morganLoader.js";
 import mountRoutes from "./routes/index.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 import dotenv from 'dotenv';
 import { connectionTracker } from "./loaders/connectionTracker.js";
 import sessionLoader from "./loaders/sessionLoader.js";
@@ -26,6 +27,9 @@ passportLoader(app);
 
 // Mount routes
 mountRoutes(app);
+
+// Error handling — must be registered after routes
+app.use(errorHandler);
 
 if (process.env.NODE_ENV !== "prod") {
     const key = fs.readFileSync(process.env.SSL_KEY_PATH);

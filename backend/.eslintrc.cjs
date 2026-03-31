@@ -1,0 +1,32 @@
+module.exports = {
+  extends: [
+    'eslint:recommended',
+  ],
+  env: {
+    node: true,
+    es6: true,
+  },
+  parserOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+  },
+  rules: {
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+  },
+  overrides: [
+    {
+      files: ['tests/**/*.{js,ts}'],
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+      },
+    },
+  ],
+};
