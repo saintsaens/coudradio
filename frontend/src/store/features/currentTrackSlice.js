@@ -15,14 +15,17 @@ const currentTrackSlice = createSlice({
     name: 'currentTrack',
     initialState: {
         track: null,
+        nextTrackIn: null,
     },
     reducers: {},
     extraReducers: (builder) => {
         builder.addCase(fetchCurrentTrack.fulfilled, (state, action) => {
-            state.track = action.payload;
+            state.track = action.payload.track;
+            state.nextTrackIn = action.payload.nextTrackIn;
         });
         builder.addCase(setCurrentChannel, (state) => {
             state.track = null;
+            state.nextTrackIn = null;
         });
     },
 });

@@ -56,12 +56,17 @@ export default function Channel({ channelName }) {
         };
     }, [dispatch]);
 
+    const nextTrackIn = useSelector((state) => state.currentTrack.nextTrackIn);
+
     useEffect(() => {
         dispatch(fetchCurrentTrack(channelName));
-
-        const interval = setInterval(() => dispatch(fetchCurrentTrack(channelName)), 30000);
-        return () => clearInterval(interval);
     }, [dispatch, channelName]);
+
+    useEffect(() => {
+        if (nextTrackIn == null) return;
+        const timeout = setTimeout(() => dispatch(fetchCurrentTrack(channelName)), nextTrackIn * 1000 + 500);
+        return () => clearTimeout(timeout);
+    }, [dispatch, channelName, nextTrackIn]);
 
     useEffect(() => {
         if (userId) {
