@@ -39,12 +39,12 @@ export const getCurrentTrack = async (channel) => {
         await buildCache(channel);
     }
     const { tracks, durations, total } = cache.get(channel);
-    if (!tracks) return null;
+    if (!tracks) return { track: null, nextTrackIn: null };
     const PLAYLIST_START = new Date('2024-05-04T13:37:00+01:00').getTime() / 1000;
     let position = ((Date.now() / 1000) - PLAYLIST_START) % total;
     for (let i = 0; i < durations.length; i++) {
-        if (position < durations[i]) return tracks[i];
+        if (position < durations[i]) return { track: tracks[i], nextTrackIn: durations[i] - position };
         position -= durations[i];
     }
-    return tracks[tracks.length - 1];
+    return { track: tracks[tracks.length - 1], nextTrackIn: 0 };
 };
