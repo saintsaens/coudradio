@@ -23,7 +23,10 @@ export const getUserProfile = async (req, res, next) => {
     }
 
     try {
-        const user = await usersService.getUserById(req.user.id);
+        const [user, timeSpent] = await Promise.all([
+            usersService.getUserById(req.user.id),
+            usersService.getTotalListeningTime(req.user.id),
+        ]);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -34,7 +37,7 @@ export const getUserProfile = async (req, res, next) => {
             username: req.user.username,
             sessionStartTime: req.user.sessionStartTime,
             lastActivity: req.user.lastActivity,
-            timeSpent: req.user.timeSpent,
+            timeSpent,
             subscribed: req.user.subscribed,
             email: req.user.email
         });
