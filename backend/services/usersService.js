@@ -57,6 +57,10 @@ export const getListeningTimesByUser = async (userId) => {
     return await usersRepository.getListeningTimesByUser(userId);
 };
 
+export const getTotalListeningTime = async (userId) => {
+    return await usersRepository.getTotalListeningTime(userId);
+};
+
 export const getUserRankAndTotal = async (id) => {
     const result = await usersRepository.getUserRankAndTotal(id);
     if (!result) {

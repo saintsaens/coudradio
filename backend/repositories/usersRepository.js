@@ -88,6 +88,16 @@ export const getListeningTimesByUser = async (userId) => {
     return rows;
 };
 
+export const getTotalListeningTime = async (userId) => {
+    const query = `
+        SELECT COALESCE(SUM(time_spent), 0) AS total
+        FROM listening_time
+        WHERE user_id = $1;
+    `;
+    const { rows } = await db.query(query, [userId]);
+    return parseInt(rows[0].total, 10);
+};
+
 export const upsertListeningTime = async (userId, channel, delta) => {
     const query = `
         INSERT INTO listening_time (user_id, channel, time_spent)
