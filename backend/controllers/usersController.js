@@ -21,15 +21,9 @@ export const updateUserActivity = async (req, res, next) => {
         const deltaTime = computeTimeSpent(lastRecordedActivity, lastActivityTime);
 
         req.user.lastActivity = lastActivityTime;
-        req.user.timeSpent = (req.user.timeSpent || 0) + deltaTime;
 
-        // TODO: users.time_spent duplicates the SUM of listening_time.time_spent.
-        // Consider dropping users.time_spent and computing the total from listening_time instead.
         const [updatedUser] = await Promise.all([
-            usersService.updateUser(userId, {
-                lastActivityTime,
-                timeSpent: req.user.timeSpent
-            }),
+            usersService.updateUser(userId, { lastActivityTime }),
             channel ? upsertListeningTime(userId, channel, deltaTime) : Promise.resolve(),
         ]);
 

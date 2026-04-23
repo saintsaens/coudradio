@@ -20,7 +20,7 @@ export const processTracks = async ({ tracks, channelName }) => {
     let encodePromise = encodeTrack(startIndex, tracks, channelName);
 
     for (let index = startIndex; index < tracks.length; index++) {
-        console.log(`Processing track ${index + 1} of ${tracks.length}…`);
+        console.log(`[${new Date().toLocaleTimeString('en-GB')}] Processing track ${index + 1} of ${tracks.length}…`);
 
         // Wait for current track's encoding to finish
         const trackMpdPath = await encodePromise;
@@ -45,7 +45,7 @@ export const processTracks = async ({ tracks, channelName }) => {
 };
 
 export const uploadTrackSegments = async (channelName, trackIndex, concurrency = 4) => {
-    console.log(`Uploading segments for track ${trackIndex + 1}…`);
+    console.log(`[${new Date().toLocaleTimeString('en-GB')}] Uploading segments for track ${trackIndex + 1}…`);
     const segments = await getAllTrackSegments(channelName, trackIndex);
     const results = [];
 
@@ -95,7 +95,7 @@ const createProgressLogger = (total, step = 100) => {
     return () => {
         completed++;
         if (completed % step === 0 || completed === total) {
-            console.log(`Uploaded ${completed}/${total} segments`);
+            console.log(`[${new Date().toLocaleTimeString('en-GB')}] Uploaded ${completed}/${total} segments`);
         }
     };
 };

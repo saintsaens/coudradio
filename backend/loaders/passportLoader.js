@@ -1,7 +1,7 @@
 import GoogleStrategy from "passport-google-oauth20";
 import passport from "passport";
 import { createGoogleCredential, getGoogleCredential } from "../services/fedCredService.js";
-import { getUserById } from "../services/usersService.js";
+import { getUserById, getTotalListeningTime } from "../services/usersService.js";
 
 const passportLoader = (app) => {
     app.use(passport.initialize());
@@ -24,33 +24,33 @@ const passportLoader = (app) => {
             if (!credentials) {
                 // User does not exist, create one
                 const { id } = await createGoogleCredential(profile);
-                const newUser = await getUserById(id);
+                const [newUser, timeSpent] = await Promise.all([getUserById(id), getTotalListeningTime(id)]);
                 return cb(null, {
                     id: newUser.id,
                     username: newUser.username,
                     role: newUser.role,
                     sessionStartTime: newUser.session_start_time,
                     lastActivity: newUser.last_activity_time,
-                    timeSpent: newUser.time_spent,
+                    timeSpent,
                     subscribed: newUser.subscribed,
                     email: newUser.email,
                 });
             } else {
                 // User exists, fetch their info
                 const userId = credentials.user_id
-                const existingUser = await getUserById(userId);
+                const [existingUser, timeSpent] = await Promise.all([getUserById(userId), getTotalListeningTime(userId)]);
 
                 if (!existingUser) {
                     console.log("User not found in users table.");
                     return cb(null, false);
                 }
-                return cb(null, { 
+                return cb(null, {
                     id: existingUser.id,
                     username: existingUser.username,
                     role: existingUser.role,
                     sessionStartTime: existingUser.session_start_time,
                     lastActivity: existingUser.last_activity_time,
-                    timeSpent: existingUser.time_spent,
+                    timeSpent,
                     subscribed: existingUser.subscribed,
                     email: existingUser.email,
                 });

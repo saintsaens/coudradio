@@ -60,6 +60,7 @@ describe('Google OAuth verify callback — new user', () => {
         fedCredService.getGoogleCredential.mockResolvedValue(null);
         fedCredService.createGoogleCredential.mockResolvedValue({ id: 1 });
         usersService.getUserById.mockResolvedValue(mockFullUser);
+        usersService.getTotalListeningTime.mockResolvedValue(0);
 
         const cb = vi.fn();
         await capturedVerify(null, null, mockProfile, cb);
@@ -83,6 +84,7 @@ describe('Google OAuth verify callback — returning user', () => {
     it('fetches existing user by credential user_id and calls cb with the complete object', async () => {
         fedCredService.getGoogleCredential.mockResolvedValue({ user_id: 1 });
         usersService.getUserById.mockResolvedValue(mockFullUser);
+        usersService.getTotalListeningTime.mockResolvedValue(0);
 
         const cb = vi.fn();
         await capturedVerify(null, null, mockProfile, cb);
