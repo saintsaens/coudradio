@@ -56,7 +56,7 @@ export default defineConfig({
                 short_name: 'Coudradio',
                 description: 'Radio streaming',
                 theme_color: '#041C32',
-                background_color: '#ffffff',
+                background_color: '#041C32',
                 display: 'standalone',
                 start_url: '/',
                 icons: [
