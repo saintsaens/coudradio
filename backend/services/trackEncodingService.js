@@ -6,21 +6,39 @@ import { localTrackDirectoryFor, ensureDirectoryExists } from "./channelCreation
 
 const unlink = util.promisify(fs.unlink);
 
+const getTrackDuration = (trackUrl) =>
+  new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(trackUrl, (err, metadata) => {
+      if (err) return reject(err);
+      resolve(metadata.format.duration ?? 0);
+    });
+  });
+
 export const encodeTrack = async (index, playlist, channelName) => {
   const trackDirectory = localTrackDirectoryFor(channelName, index);
   await ensureDirectoryExists(trackDirectory);
   const currentTrack = playlist[index];
   const playlistPath = `${trackDirectory}/track${index}.mpd`;
 
+  const duration = await getTrackDuration(currentTrack);
+  // loudnorm needs sufficient audio to measure integrated loudness; skip it for very short clips
+  const useLoudnorm = duration >= 2;
+
   return new Promise((resolve, reject) => {
+    const stderrLines = [];
     const command = ffmpeg()
       .input(currentTrack)
       .output(playlistPath)
       .noVideo()
       .audioCodec('aac')
       .audioBitrate('320k')
-      .audioFilters('loudnorm=I=-14:TP=-1:LRA=11')
-      .format('dash')
+      .format('dash');
+
+    if (useLoudnorm) {
+      command.audioFilters('loudnorm=I=-14:TP=-1:LRA=11');
+    }
+
+    command
       .outputOptions([
         '-y',                           // Overwrite output files without asking
         '-dash_segment_type', 'mp4',     // Use MP4 segments
@@ -29,8 +47,10 @@ export const encodeTrack = async (index, playlist, channelName) => {
         '-init_seg_name', `track${index}_init.mp4`,  // Name for the initialization segment
         '-media_seg_name', `track${index}_$Number$.m4s`,  // Template for media segments
       ])
+      .on('stderr', (line) => stderrLines.push(line))
       .on('error', (err) => {
-        console.error('FFmpeg error:', err.message);
+        console.error(`FFmpeg error on track ${index}:`, err.message);
+        console.error('FFmpeg stderr:\n' + stderrLines.slice(-20).join('\n'));
         reject(err);
       })
       .on('end', () => {
