@@ -3,7 +3,6 @@
 //   node backend/scripts/channel-status.js                    # auto-discover channels from MinIO
 //   node backend/scripts/channel-status.js lofi japanese-rnb  # check specific channels
 
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import xml2js from 'xml2js';
