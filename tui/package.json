@@ -2,6 +2,9 @@
   "name": "coudradio-tui",
   "version": "0.1.0",
   "type": "module",
+  "bin": {
+    "coudradio": "./index.jsx"
+  },
   "scripts": {
     "start": "tsx index.jsx"
   },
