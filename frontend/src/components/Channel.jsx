@@ -6,7 +6,7 @@ import { setError } from "../store/features/audioPlayerSlice";
 import MuteToggler from "./Commands/MuteToggler";
 import Loading from "./Loading";
 import Unavailable from "./Unavailable";
-import { fetchUser, updateLastActivity, updateSessionStartTime, fetchListeningTimes } from "../store/features/userSlice";
+import { fetchUser, updateLastActivity, updateSessionStartTime, fetchListeningTimes, flushActivity } from "../store/features/userSlice";
 import { fetchListeners } from "../store/features/listenersSlice";
 import { fetchCurrentTrack } from "../store/features/currentTrackSlice";
 import useIsMobile from "../hooks/useIsMobile";
@@ -68,18 +68,32 @@ export default function Channel({ channelName }) {
         return () => clearTimeout(timeout);
     }, [dispatch, channelName, nextTrackIn]);
 
+    // Track listening time only while audio is actually playing. The baseline is
+    // reset whenever counting (re)starts so the first delta is measured from now,
+    // not from before a pause/background gap. On teardown — channel switch, pause,
+    // unmount, or tab close — the final partial interval is flushed to the channel
+    // being left so it isn't lost.
     useEffect(() => {
-        if (userId) {
-            const updateActivity = () => {
-                dispatch(updateLastActivity(channelName)).then(() => {
-                    dispatch(fetchListeningTimes());
-                });
-            };
-            dispatch(updateSessionStartTime());
-            const interval = setInterval(updateActivity, 59000);
-            return () => clearInterval(interval);
-        }
-    }, [dispatch, userId, channelName]);
+        if (!userId || !playing) return;
+
+        const updateActivity = () => {
+            dispatch(updateLastActivity(channelName)).then(() => {
+                dispatch(fetchListeningTimes());
+            });
+        };
+
+        dispatch(updateSessionStartTime());
+        const interval = setInterval(updateActivity, 59000);
+
+        const handlePageHide = () => flushActivity(channelName);
+        window.addEventListener('pagehide', handlePageHide);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('pagehide', handlePageHide);
+            flushActivity(channelName);
+        };
+    }, [dispatch, userId, channelName, playing]);
 
     if (error) {
         return <Unavailable onRetry={() => dispatch(setError(false))} />;

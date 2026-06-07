@@ -109,11 +109,20 @@ export const upsertListeningTime = async (userId, channel, delta) => {
 };
 
 export const getUserRankAndTotal = async (id) => {
+    // Rank by total time in listening_time (the source of truth) rather than the
+    // now-frozen users.time_spent column. LEFT JOIN so users with no listening
+    // time still rank (at 0).
     const query = `
-        WITH ranked AS (
-            SELECT id, time_spent,
+        WITH totals AS (
+            SELECT u.id, COALESCE(SUM(lt.time_spent), 0) AS time_spent
+            FROM ${tableName} u
+            LEFT JOIN listening_time lt ON lt.user_id = u.id
+            GROUP BY u.id
+        ),
+        ranked AS (
+            SELECT id,
                    RANK() OVER (ORDER BY time_spent DESC) AS rank
-            FROM ${tableName}
+            FROM totals
         )
         SELECT r.rank, t.total
         FROM ranked r

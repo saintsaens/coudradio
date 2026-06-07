@@ -1,5 +1,5 @@
 import * as usersService from "../services/usersService.js";
-import { computeTimeSpent } from "../utils/durations.js";
+import { computeTimeSpent, clampActivityDelta } from "../utils/durations.js";
 import { upsertListeningTime } from "../repositories/usersRepository.js";
 
 export const getListeningTimes = async (req, res, next) => {
@@ -18,7 +18,7 @@ export const updateUserActivity = async (req, res, next) => {
         const { channel } = req.body;
         const lastActivityTime = new Date();
         const lastRecordedActivity = req.user.lastActivity || lastActivityTime;
-        const deltaTime = computeTimeSpent(lastRecordedActivity, lastActivityTime);
+        const deltaTime = clampActivityDelta(computeTimeSpent(lastRecordedActivity, lastActivityTime));
 
         req.user.lastActivity = lastActivityTime;
 

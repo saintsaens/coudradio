@@ -38,6 +38,21 @@ export const updateLastActivity = createAsyncThunk('user/updateLastActivity', as
     return await response.json();
 });
 
+// Fire-and-forget flush of the final partial interval to the channel being left
+// (on channel switch, pause, unmount or tab close). Uses keepalive so the request
+// survives page unload. Without this, up to one ping interval of listening time
+// is lost on every transition.
+export const flushActivity = (channel) => {
+    if (!channel) return;
+    fetch(`${baseUrl}/users/activity`, {
+        method: 'PATCH',
+        credentials: 'include',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel }),
+    }).catch(() => {});
+};
+
 export const fetchListeningTimes = createAsyncThunk('user/fetchListeningTimes', async () => {
     const response = await fetch(`${baseUrl}/users/listening-times`, { credentials: 'include' });
     if (!response.ok) throw new Error('Failed to fetch listening times');

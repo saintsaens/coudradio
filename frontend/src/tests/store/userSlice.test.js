@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
-import reducer, { fetchUser, updateLastActivity, updateSessionStartTime } from '../../store/features/userSlice.js';
+import reducer, { fetchUser, updateLastActivity, updateSessionStartTime, flushActivity } from '../../store/features/userSlice.js';
 
 const makeStore = () => configureStore({ reducer: { user: reducer } });
 
@@ -144,6 +144,37 @@ describe('updateLastActivity thunk', () => {
 
         expect(updateLastActivity.fulfilled.match(result)).toBe(true);
         expect(result.payload).toEqual({ updated: true });
+    });
+});
+
+describe('flushActivity', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('sends a keepalive PATCH with the channel', () => {
+        const fetchMock = vi.spyOn(global, 'fetch').mockReturnValue(Promise.resolve({ ok: true }));
+
+        flushActivity('jazz');
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, opts] = fetchMock.mock.calls[0];
+        expect(url).toContain('/users/activity');
+        expect(opts).toMatchObject({ method: 'PATCH', keepalive: true, credentials: 'include' });
+        expect(JSON.parse(opts.body)).toEqual({ channel: 'jazz' });
+    });
+
+    it('is a no-op when no channel is given', () => {
+        const fetchMock = vi.spyOn(global, 'fetch').mockReturnValue(Promise.resolve({ ok: true }));
+
+        flushActivity(undefined);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('swallows network errors', () => {
+        vi.spyOn(global, 'fetch').mockReturnValue(Promise.reject(new Error('offline')));
+        expect(() => flushActivity('jazz')).not.toThrow();
     });
 });
 
