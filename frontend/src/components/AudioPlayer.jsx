@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import dashjs from "dashjs";
 import { computeStartTime } from "../utils/time.js";
 import { useDispatch } from "react-redux";
-import { setMuted, checkStream, setPlaying, setLoadingProgress } from "../store/features/audioPlayerSlice.js";
+import { setMuted, setError, setPlaying, setLoadingProgress } from "../store/features/audioPlayerSlice.js";
 import Background from "./Background.jsx";
 
 const AudioPlayer = ({ audioRef, channelName }) => {
@@ -12,14 +12,13 @@ const AudioPlayer = ({ audioRef, channelName }) => {
   const dispatch = useDispatch();
   let player = null; // Keep track of the Dash.js player instance
 
-  const setupPlayer = (video, start) => {
+  const setupPlayer = (video) => {
     player = dashjs.MediaPlayer().create();
 
     player.initialize();
     player.updateSettings({ debug: { logLevel: dashjs.Debug.LOG_LEVEL_ERROR } });
     player.attachView(video);
     player.setAutoPlay(true);
-    player.attachSource(src, start);
 
     player.on(dashjs.MediaPlayer.events.PLAYBACK_NOT_ALLOWED, () => {
       console.log("Autoplay restrictions detected. Muting and resuming.");
@@ -54,23 +53,46 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     }
   };
 
+  const retrieveManifest = (dashPlayer) =>
+    new Promise((resolve, reject) => {
+      dashPlayer.retrieveManifest(src, (manifest, error) => (manifest ? resolve(manifest) : reject(error)));
+    });
+
   const initializeStream = async () => {
     const video = audioRef.current;
     if (!video) return;
 
     // Clean up any existing player before initializing
     cleanupPlayer();
-
-    const result = await dispatch(checkStream(src));
-    if (checkStream.rejected.match(result)) {
-      return;
-    }
-
-    const start = computeStartTime(result.payload);
+    dispatch(setLoadingProgress(0));
 
     video.loop = true;
     dispatch(setMuted(video.muted));
-    setupPlayer(video, start);
+    setupPlayer(video);
+    const currentPlayer = player;
+
+    // Fetch the MPD once: read the playlist duration from it, then hand the parsed manifest to dash.js
+    let manifest;
+    try {
+      manifest = await retrieveManifest(currentPlayer);
+    } catch (error) {
+      console.error("Error fetching stream:", error);
+      if (player === currentPlayer) dispatch(setError(true));
+      return;
+    }
+
+    // Player was reset (unmount or channel switch) while the manifest was loading
+    if (player !== currentPlayer) return;
+
+    const duration = manifest.mediaPresentationDuration;
+    if (!duration) {
+      console.error("Could not read MPD duration");
+      dispatch(setError(true));
+      return;
+    }
+
+    dispatch(setLoadingProgress(50));
+    player.attachSource(manifest, computeStartTime(duration));
   };
 
   useEffect(() => {

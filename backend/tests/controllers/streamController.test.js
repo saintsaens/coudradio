@@ -8,7 +8,7 @@ describe('getStream', () => {
     let req, res, next;
 
     beforeEach(() => {
-        req = { params: {} };
+        req = { params: {}, acceptsEncodings: vi.fn().mockReturnValue(false) };
         res = {
             status: vi.fn().mockReturnThis(),
             json: vi.fn().mockReturnThis(),
@@ -35,6 +35,22 @@ describe('getStream', () => {
 
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/dash+xml');
         expect(mockStream.pipe).toHaveBeenCalledWith(res);
+        expect(res.setHeader).not.toHaveBeenCalledWith('Content-Encoding', 'gzip');
+    });
+
+    it('gzips the stream when the client accepts gzip', async () => {
+        const gzipStream = { pipe: vi.fn() };
+        const mockStream = { pipe: vi.fn().mockReturnValue(gzipStream), on: vi.fn() };
+        vi.mocked(mpdService.getMpdStream).mockResolvedValue(mockStream);
+        req.params = { channel: 'lofi' };
+        req.acceptsEncodings.mockReturnValue('gzip');
+
+        await getStream(req, res, next);
+
+        expect(res.setHeader).toHaveBeenCalledWith('Content-Encoding', 'gzip');
+        expect(res.setHeader).toHaveBeenCalledWith('Vary', 'Accept-Encoding');
+        expect(mockStream.pipe).not.toHaveBeenCalledWith(res);
+        expect(gzipStream.pipe).toHaveBeenCalledWith(res);
     });
 
     it('calls next with an error when the service throws', async () => {

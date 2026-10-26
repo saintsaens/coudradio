@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setSelectedIndex, closeSwitcher, toggleSwitcher } from "../../store/features/channelSwitcherSlice";
-import { prefetchMPDDuration } from "../../utils/time.js";
 import { Modal, Box, List, ListItem, ListItemButton, ListItemText, InputBase } from "@mui/material";
 
 const VISIBLE_ROWS = 9;
@@ -14,7 +13,6 @@ const ChannelSwitcher = () => {
     const { channelList } = useSelector((state) => state.user);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -68,12 +66,6 @@ const ChannelSwitcher = () => {
         }
         setSearchQuery(value);
     };
-
-    useEffect(() => {
-        const item = filteredItems[selectedIndex];
-        if (item) prefetchMPDDuration(`${backendUrl}/${item}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedIndex, filteredItems]);
 
     useEffect(() => {
         itemRefs.current[selectedIndex]?.scrollIntoView?.({ block: 'nearest' });
