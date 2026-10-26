@@ -22,10 +22,10 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     player.attachSource(src, start);
 
     player.on(dashjs.MediaPlayer.events.PLAYBACK_NOT_ALLOWED, () => {
-      console.log("Autoplay restrictions detected. Muting and reloading.");
+      console.log("Autoplay restrictions detected. Muting and resuming.");
       video.muted = true;
       dispatch(setMuted(true));
-      reloadPlayer(video, start);
+      video.play().catch((err) => console.error("Muted playback failed:", err));
     });
     player.on(dashjs.MediaPlayer.events.BUFFER_LEVEL_UPDATED, (e) => {
       const bufferLevel = e.bufferLevel ?? 0;
@@ -45,11 +45,6 @@ const AudioPlayer = ({ audioRef, channelName }) => {
         navigator.mediaSession.setActionHandler('pause', () => video.pause());
       }
     });
-  };
-
-  const reloadPlayer = (video, start) => {
-    cleanupPlayer();
-    setupPlayer(video, start);
   };
 
   const cleanupPlayer = () => {
