@@ -248,4 +248,11 @@ describe("addMediaPresentationDuration", () => {
 
         expect(result).toBe(finalMpdContent);
     });
+
+    it("should wait for the MPD to be written and propagate write errors", async () => {
+        fs.readFile.mockResolvedValue(`<MPD type="static"></MPD>`);
+        fs.writeFile.mockRejectedValue(new Error("disk full"));
+
+        await expect(addMediaPresentationDuration(mpdPath, "PT1M0S")).rejects.toThrow("disk full");
+    });
 });

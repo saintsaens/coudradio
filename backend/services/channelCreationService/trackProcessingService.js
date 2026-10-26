@@ -72,6 +72,11 @@ export const uploadTrackSegments = async (channelName, trackIndex, concurrency =
     const workers = Array.from({ length: concurrency }, worker);
     await Promise.all(workers);
 
+    const failedCount = results.filter(result => result === null).length;
+    if (failedCount > 0) {
+        throw new Error(`Failed to upload ${failedCount} of ${segments.length} segments for track ${trackIndex + 1}`);
+    }
+
     return results;
 };
 

@@ -2,7 +2,7 @@ import { initializeChannelMpd, finalizeChannelMpd } from "./channelMpdService.js
 import { getTracklist } from "../tracklistService.js";
 import { uploadMpd } from "../mpdService.js";
 import { processTracks } from "./trackProcessingService.js";
-import { cleanupProgress } from "./progressSavingService.js";
+import { cleanupProgress, loadProgress } from "./progressSavingService.js";
 import { uploadTrackList } from "../../repositories/mpdRepository.js";
 
 export const createChannel = async (channelName) => {
@@ -12,7 +12,9 @@ export const createChannel = async (channelName) => {
 };
 
 const initializeChannel = async (channelName) => {
-    await initializeChannelMpd(channelName);
+    // Without a progress file this is a fresh run: a leftover local MPD from a previous run must not be reused
+    const isResuming = await loadProgress(channelName) >= 0;
+    await initializeChannelMpd(channelName, { reset: !isResuming });
 };
 
 const populateChannel = async (channelName) => {

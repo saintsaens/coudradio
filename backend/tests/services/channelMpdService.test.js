@@ -51,6 +51,19 @@ describe('initializeChannelMpd', () => {
             expect.stringContaining('<?xml version="1.0"')
         );
     });
+
+    it('overwrites an existing MPD file with a fresh header when reset is requested', async () => {
+        vi.mocked(fs.access).mockResolvedValue(undefined);
+        vi.mocked(fs.writeFile).mockResolvedValue(undefined);
+
+        await initializeChannelMpd('lofi', { reset: true });
+
+        expect(fs.writeFile).toHaveBeenCalledWith(
+            '/tmp/mpd/lofi.mpd',
+            expect.stringContaining('<?xml version="1.0"')
+        );
+        expect(fs.writeFile).toHaveBeenCalledWith('/tmp/mpd/lofi.mpd', expect.not.stringContaining('</MPD>'));
+    });
 });
 
 describe('addTrackToChannelMpd', () => {

@@ -6,8 +6,13 @@ import { transformMpdIntoPeriod, getTotalPeriodsDurations, addMediaPresentationD
 
 dotenv.config({ quiet: true });
 
-export const initializeChannelMpd = async (channelName) => {
+export const initializeChannelMpd = async (channelName, { reset = false } = {}) => {
     const channelMpdPath = channelMpdPathFor(channelName);
+
+    if (reset) {
+        await createChannelMpd(channelMpdPath);
+        return;
+    }
 
     try {
         await fs.access(channelMpdPath);

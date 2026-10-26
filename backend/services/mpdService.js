@@ -287,7 +287,7 @@ export const addMediaPresentationDuration = async (mpdPath, mediaPresentationDur
     );
 
     // Write the updated MPD content back to the file
-    fs.writeFile(mpdPath, updatedMpdContent, 'utf-8');
+    await fs.writeFile(mpdPath, updatedMpdContent, 'utf-8');
 
     // Return the updated MPD content
     return updatedMpdContent;
