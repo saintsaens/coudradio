@@ -18,10 +18,13 @@ npm run start-server       # Production server
 npm test                   # Run vitest tests
 npm run lint               # ESLint check
 npm run lint:fix           # ESLint auto-fix
-npm run create-channel <name>  # Create a new radio channel
 npm run channel -- status [name…]       # Overview of all channels (MPD, duration, track count, manifest, inconsistencies)
 npm run channel -- tracks <name>        # Tracklist with start times and what's playing now (--sources to show source files)
 npm run channel -- verify <name>        # Check every segment exists in MinIO and the live MPD matches the channel
+npm run channel -- add <name> [file…]   # Encode bucket files not in the channel yet and append them (--sorted, --dry-run); creates the channel if needed
+npm run channel -- reencode <name> <#|from-to…>  # Re-encode tracks from their source (--missing, --outdated, --all, --force, --dry-run)
+npm run channel -- export <name>        # Save channel.json locally to edit titles, sources, order, or remove tracks
+npm run channel -- sync <name> [--file <path>]  # Regenerate the MPD and tracks.json from channel.json or an edited copy (--dry-run, --all)
 npm run channel -- bootstrap <name|--all> [--write]  # Create channel.json from the live MPD (dry run without --write)
 ```
 
@@ -46,13 +49,13 @@ npm run web        # Web version
 
 ### Streaming Pipeline
 The core feature: audio tracks are encoded with FFmpeg into MPEG-DASH segments, stored in MinIO (S3-compatible), and served as adaptive bitrate streams. The flow is:
-1. `channelCreationService/` — sets up a channel with encoded segments
-2. `mpdService.js` — generates/parses MPD (Media Presentation Description) manifests
-3. `trackEncodingService.js` / `segmentsService.js` — FFmpeg encoding and segment management
+1. `scripts/channel.js` (`npm run channel`) → `channelMaintenanceService.js` — adds, re-encodes and publishes tracks
+2. `channelCreationService/trackProcessingService.js` + `trackEncodingService.js` — FFmpeg encoding of each source file and segment upload
+3. `channelManifestService.js` / `mpdService.js` — build the channel MPD (Media Presentation Description) from `channel.json`
 4. `stream.js` route + `streamController.js` — serves MPD files; `segment.js` route serves audio chunks
 5. Frontend `AudioPlayer.jsx` uses DASH.js to consume the stream
 
-`channelManifestService.js` handles `mpd/<channel>/channel.json`, the per-channel manifest listing each track's segment prefix (`id`), source file, title, duration and segment template. The channel MPD and `tracks.json` can be regenerated from it; channels without one get it derived in memory from their live MPD.
+`mpd/<channel>/channel.json` is the source of truth for a channel: the ordered list of tracks with their segment prefix (`id`, e.g. `track12` → `track12_init.mp4`, `track12_$Number$.m4s`), source file, title, duration, segment template and `encodedAt`. The channel MPD and `tracks.json` are generated from it, so never edit them by hand: edit `channel.json` (`export`, then `sync --file`) instead. Track ids are stable, so reordering or removing tracks never needs re-encoding. `add` and `reencode` save `channel.json` after each track, so an interrupted run resumes when re-run.
 
 ### Backend Structure
 - **Routes** → **Controllers** → **Services** → **Repositories** (DB layer via `pg`)
@@ -98,8 +101,8 @@ PostgreSQL with three tables:
 
 ## Creating a New Channel
 
-1. Upload audio files to a new MinIO bucket named `<channel-name>`
-2. Run `npm run create-channel <channel-name>` in `/backend` — encodes tracks with FFmpeg, builds and uploads the MPD
+1. Upload audio files to a new MinIO bucket named `<channel-name>` (`node scripts/upload.js <dir> <bucket>`)
+2. Run `npm run channel -- add <channel-name>` in `/backend` — encodes every file with FFmpeg, uploads the segments, then publishes `channel.json`, the MPD and `tracks.json`
 3. Add `<channel-name>` to `VITE_CHANNELS_DEFAULT` (public) or `VITE_CHANNELS_LOGGEDIN` (subscribers only) in `frontend/.env`
 
 ## Key Technical Notes

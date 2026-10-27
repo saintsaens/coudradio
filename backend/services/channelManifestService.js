@@ -2,7 +2,6 @@ import path from 'path';
 import xml2js from 'xml2js';
 import * as mpdRepository from '../repositories/mpdRepository.js';
 import { getTracks, ALLOWED_EXTENSIONS } from '../repositories/trackRepository.js';
-import { createChannelMpdHeader, createChannelMpdFooter } from './channelCreationService/channelMpdService.js';
 import {
     createPeriod,
     createInitSegmentRoute,
@@ -13,32 +12,55 @@ import {
 import { PLAYLIST_START } from './metadataService.js';
 
 export const MANIFEST_VERSION = 1;
+// Tracks encoded before this date were not loudness-normalized
+export const LOUDNORM_DATE = new Date('2026-03-29');
 const AUDIO_CHANNEL_SCHEME = 'urn:mpeg:dash:23003:3:audio_channel_configuration:2011';
 const URL_FIELDS = ['initialization', 'media'];
 const COMPARED_FIELDS = ['id', 'timescale', 'segmentDuration', 'audioChannels', 'audioChannelScheme', ...URL_FIELDS];
 
-export const parseChannelMpd = async (xml) => {
+const parseMpd = async (xml) => {
     const result = await xml2js.parseStringPromise(xml, { explicitArray: false, mergeAttrs: true });
-    const periods = [].concat(result.MPD.Period ?? []);
+    return result.MPD;
+};
+
+const parseAudioRepresentation = (period) => {
+    const adaptationSet = [].concat(period.AdaptationSet).find((set) => set.contentType === 'audio');
+    const representation = [].concat(adaptationSet.Representation)[0];
+    const template = representation.SegmentTemplate;
+    const audioChannelConfiguration = representation.AudioChannelConfiguration;
+    return {
+        audioChannels: audioChannelConfiguration?.value ?? null,
+        audioChannelScheme: audioChannelConfiguration?.schemeIdUri ?? null,
+        timescale: Number(template.timescale),
+        segmentDuration: Number(template.duration),
+        initialization: template.initialization,
+        media: template.media,
+    };
+};
+
+export const parseChannelMpd = async (xml) => {
+    const mpd = await parseMpd(xml);
+    const periods = [].concat(mpd.Period ?? []);
 
     return {
-        mediaPresentationDuration: result.MPD.mediaPresentationDuration ?? null,
-        periods: periods.map((period) => {
-            const adaptationSet = [].concat(period.AdaptationSet).find((set) => set.contentType === 'audio');
-            const representation = adaptationSet.Representation;
-            const template = representation.SegmentTemplate;
-            const audioChannelConfiguration = representation.AudioChannelConfiguration;
-            return {
-                id: period.id,
-                duration: iso8601DurationToSeconds(period.duration),
-                audioChannels: audioChannelConfiguration?.value ?? null,
-                audioChannelScheme: audioChannelConfiguration?.schemeIdUri ?? null,
-                timescale: Number(template.timescale),
-                segmentDuration: Number(template.duration),
-                initialization: template.initialization,
-                media: template.media,
-            };
-        }),
+        mediaPresentationDuration: mpd.mediaPresentationDuration ?? null,
+        periods: periods.map((period) => ({
+            id: period.id,
+            duration: iso8601DurationToSeconds(period.duration),
+            ...parseAudioRepresentation(period),
+        })),
+    };
+};
+
+// Reads the single-track MPD written by ffmpeg, whose period has no duration of its own
+export const parseEncodedTrackMpd = async (xml) => {
+    const mpd = await parseMpd(xml);
+    const { audioChannels, timescale, segmentDuration } = parseAudioRepresentation([].concat(mpd.Period)[0]);
+    return {
+        duration: iso8601DurationToSeconds(mpd.mediaPresentationDuration),
+        audioChannels,
+        timescale,
+        segmentDuration,
     };
 };
 
@@ -51,7 +73,8 @@ export const titleFromSource = (source) => path.basename(source, path.extname(so
 
 // Maps the periods of an existing channel MPD to a manifest. Periods were encoded in source bucket listing
 // order, so sources can only be mapped when the bucket still holds exactly as many files as there are periods.
-export const bootstrapManifest = ({ channel, periods, sources, trackList }) => {
+// encodedAt is the MPD's upload date: every track in it was encoded at that date or before.
+export const bootstrapManifest = ({ channel, periods, sources, trackList, encodedAt = null }) => {
     const warnings = [];
 
     const sourcesMatch = Array.isArray(sources) && sources.length === periods.length;
@@ -82,22 +105,27 @@ export const bootstrapManifest = ({ channel, periods, sources, trackList }) => {
             audioChannels: period.audioChannels,
             timescale: period.timescale,
             segmentDuration: period.segmentDuration,
-            encodedAt: null,
+            encodedAt,
         };
     });
 
     return { manifest: { version: MANIFEST_VERSION, channel, tracks }, warnings };
 };
 
+const MPD_HEADER = `<?xml version="1.0" encoding="UTF-8"?>
+    <MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="urn:mpeg:dash:schema:mpd:2011"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xsi:schemaLocation="urn:mpeg:DASH:schema:MPD:2011 http://standards.iso.org/ittf/PubliclyAvailableStandards/MPEG-DASH_schema_files/DASH-MPD.xsd"
+    profiles="urn:mpeg:dash:profile:isoff-live:2011"
+    type="static"`;
+
 export const getTotalDuration = (manifest) => manifest.tracks.reduce((total, track) => total + track.duration, 0);
 
 export const buildChannelMpd = (manifest) => {
     const totalDuration = secondsToIso8601Duration(getTotalDuration(manifest));
-    const header = createChannelMpdHeader().replace(
-        /type="static">/,
-        `type="static"
-        mediaPresentationDuration="${totalDuration}">`
-    );
+    const header = `${MPD_HEADER}
+        mediaPresentationDuration="${totalDuration}">`;
 
     const periods = manifest.tracks.map((track, index) => createPeriod({
         id: track.id,
@@ -110,7 +138,7 @@ export const buildChannelMpd = (manifest) => {
         media: createMediaSegmentRoute(track.id, manifest.channel),
     }));
 
-    return [header, ...periods, createChannelMpdFooter()].join('\n');
+    return [header, ...periods, '</MPD>'].join('\n');
 };
 
 export const buildTrackList = (manifest) => manifest.tracks.map((track) => track.title);
@@ -143,8 +171,9 @@ export const compareManifestWithMpd = async (manifest, mpd) => {
 export const isUrlDifference = (difference) => URL_FIELDS.includes(difference.field);
 
 export const bootstrapChannel = async (channel) => {
-    const [mpdXml, trackList, sources] = await Promise.all([
+    const [mpdXml, stat, trackList, sources] = await Promise.all([
         mpdRepository.getMpdContent(channel),
+        mpdRepository.getMpdStat(channel),
         mpdRepository.getTrackList(channel),
         getTracks(channel).catch(() => null),
     ]);
@@ -153,7 +182,8 @@ export const bootstrapChannel = async (channel) => {
     }
 
     const mpd = await parseChannelMpd(mpdXml);
-    const { manifest, warnings } = bootstrapManifest({ channel, periods: mpd.periods, sources, trackList });
+    const encodedAt = stat?.lastModified ? new Date(stat.lastModified).toISOString() : null;
+    const { manifest, warnings } = bootstrapManifest({ channel, periods: mpd.periods, sources, trackList, encodedAt });
     const differences = await compareManifestWithMpd(manifest, mpd);
     return { manifest, warnings, differences };
 };
@@ -228,4 +258,78 @@ export const findSegmentProblems = (manifest, segmentNames) => {
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
     return { problems, orphanPrefixes };
+};
+
+export const isOutdated = (track) => !track.encodedAt || new Date(track.encodedAt) < LOUDNORM_DATE;
+
+export const nextTrackId = (manifest) => {
+    const numbers = manifest.tracks
+        .map((track) => track.id.match(/^track(\d+)$/))
+        .filter(Boolean)
+        .map((match) => Number(match[1]));
+    return `track${numbers.length ? Math.max(...numbers) + 1 : 0}`;
+};
+
+export const createManifest = (channel) => ({ version: MANIFEST_VERSION, channel, tracks: [] });
+
+// Appends the track, or with sorted inserts it before the first track whose source sorts after its own
+export const insertTrack = (manifest, track, { sorted = false } = {}) => {
+    const tracks = [...manifest.tracks];
+    const position = sorted
+        ? tracks.findIndex((other) => other.source && other.source.localeCompare(track.source) > 0)
+        : -1;
+    tracks.splice(position === -1 ? tracks.length : position, 0, track);
+    return { ...manifest, tracks };
+};
+
+// Turns arguments like "3" or "52-60" into sorted track indices
+export const parseTrackSelection = (args, trackCount) => {
+    const indices = new Set();
+    for (const arg of args) {
+        const match = arg.match(/^(\d+)(?:-(\d+))?$/);
+        if (!match) throw new Error(`Invalid track number or range: "${arg}"`);
+        const from = Number(match[1]);
+        const to = Number(match[2] ?? match[1]);
+        if (from > to || to >= trackCount) {
+            throw new Error(`Track range "${arg}" is outside the channel (tracks 0 to ${trackCount - 1})`);
+        }
+        for (let index = from; index <= to; index++) indices.add(index);
+    }
+    return [...indices].sort((a, b) => a - b);
+};
+
+const EDITABLE_FIELDS = ['title', 'source'];
+
+// Applies a hand-edited copy of the manifest: tracks can be reordered, removed, retitled or given a source.
+// Everything else comes from the saved manifest, since it describes segments that already exist.
+export const applyManifestEdits = (saved, edited) => {
+    if (!Array.isArray(edited?.tracks)) throw new Error('The edited manifest has no "tracks" list');
+    if (edited.channel !== undefined && edited.channel !== saved.channel) {
+        throw new Error(`The edited manifest is for channel "${edited.channel}", not "${saved.channel}"`);
+    }
+
+    const savedById = new Map(saved.tracks.map((track) => [track.id, track]));
+    const seen = new Set();
+    const errors = [];
+    const tracks = edited.tracks.map((track, index) => {
+        const original = savedById.get(track?.id);
+        if (!original) {
+            errors.push(`#${index}: unknown track id "${track?.id}" (only tracks with encoded segments can be listed)`);
+            return null;
+        }
+        if (seen.has(track.id)) errors.push(`#${index}: track "${track.id}" is listed twice`);
+        seen.add(track.id);
+        if (typeof track.title !== 'string' || !track.title.trim()) errors.push(`#${index}: "${track.id}" has no title`);
+        if ('source' in track && track.source !== null && typeof track.source !== 'string') errors.push(`#${index}: "${track.id}" has an invalid source`);
+
+        const updated = { ...original };
+        for (const field of EDITABLE_FIELDS) {
+            if (field in track) updated[field] = track[field];
+        }
+        return updated;
+    });
+
+    if (!tracks.length) errors.push('The edited manifest has no tracks');
+    if (errors.length) throw new Error(`Invalid manifest:\n  ${errors.join('\n  ')}`);
+    return { ...saved, tracks };
 };

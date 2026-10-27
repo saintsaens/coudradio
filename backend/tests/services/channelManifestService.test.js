@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+    applyManifestEdits,
     bootstrapManifest,
     buildChannelMpd,
     buildTrackList,
@@ -8,9 +9,14 @@ import {
     describeTracks,
     expectedSegmentCount,
     findSegmentProblems,
+    insertTrack,
+    isOutdated,
     isUrlDifference,
     loadChannelManifest,
+    nextTrackId,
     parseChannelMpd,
+    parseEncodedTrackMpd,
+    parseTrackSelection,
     stripAudioExtension,
     titleFromSource,
 } from '../../services/channelManifestService.js';
@@ -20,6 +26,7 @@ import { getTracks } from '../../repositories/trackRepository.js';
 
 vi.mock('../../repositories/mpdRepository.js', () => ({
     getMpdContent: vi.fn(),
+    getMpdStat: vi.fn(),
     getTrackList: vi.fn(),
     getChannelManifest: vi.fn(),
 }));
@@ -113,6 +120,14 @@ describe('bootstrapManifest', () => {
             'The MPD has 2 tracks but the source bucket has 1 files: sources left unmapped',
             'tracks.json has 1 titles for 2 tracks: titles derived from file names instead',
         ]);
+    });
+
+    it('dates every track with the MPD upload date when given', async () => {
+        const { periods } = await parseChannelMpd(liveMpd);
+
+        const { manifest } = bootstrapManifest({ channel: 'lofi', periods, sources, trackList: null, encodedAt: '2026-01-01T00:00:00.000Z' });
+
+        expect(manifest.tracks.map((t) => t.encodedAt)).toEqual(['2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z']);
     });
 
     it('derives titles from mapped sources when there is no tracks.json', async () => {
@@ -237,6 +252,7 @@ describe('loadChannelManifest', () => {
     it('derives the manifest from the live MPD when none is saved', async () => {
         vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(null);
         vi.mocked(mpdRepository.getMpdContent).mockResolvedValue(liveMpd);
+        vi.mocked(mpdRepository.getMpdStat).mockResolvedValue({ lastModified: new Date('2026-02-01T10:00:00Z') });
         vi.mocked(mpdRepository.getTrackList).mockResolvedValue(['A', 'B']);
         vi.mocked(getTracks).mockResolvedValue(sources);
 
@@ -244,6 +260,7 @@ describe('loadChannelManifest', () => {
 
         expect(persisted).toBe(false);
         expect(buildTrackList(manifest)).toEqual(['A', 'B']);
+        expect(manifest.tracks[0].encodedAt).toBe('2026-02-01T10:00:00.000Z');
     });
 
     it('fails when the channel has no MPD', async () => {
@@ -253,5 +270,98 @@ describe('loadChannelManifest', () => {
         vi.mocked(getTracks).mockResolvedValue([]);
 
         await expect(loadChannelManifest('lofi')).rejects.toThrow('No MPD found for channel "lofi"');
+    });
+});
+
+describe('parseEncodedTrackMpd', () => {
+    it('reads the duration from the MPD and the template from the audio adaptation set', async () => {
+        const xml = `<?xml version="1.0" encoding="utf-8"?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" mediaPresentationDuration="PT2M12.0S">
+  <Period id="0" start="PT0.0S">
+    <AdaptationSet id="0" contentType="video">
+      <Representation id="0" mimeType="video/mp4">
+        <SegmentTemplate timescale="90000" duration="450000" initialization="t_init.mp4" media="t_$Number$.m4s" startNumber="1" />
+      </Representation>
+    </AdaptationSet>
+    <AdaptationSet id="1" contentType="audio">
+      <Representation id="1" mimeType="audio/mp4">
+        <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="6" />
+        <SegmentTemplate timescale="1000000" duration="5000000" initialization="t_init.mp4" media="t_$Number$.m4s" startNumber="1" />
+      </Representation>
+    </AdaptationSet>
+  </Period>
+</MPD>`;
+
+        expect(await parseEncodedTrackMpd(xml)).toEqual({ duration: 132, audioChannels: '6', timescale: 1000000, segmentDuration: 5000000 });
+    });
+});
+
+describe('isOutdated', () => {
+    it('flags tracks encoded before loudness normalization or with no date', () => {
+        expect(isOutdated(track('t', 1, { encodedAt: '2026-03-01T00:00:00.000Z' }))).toBe(true);
+        expect(isOutdated(track('t', 1, { encodedAt: null }))).toBe(true);
+        expect(isOutdated(track('t', 1, { encodedAt: '2026-04-01T00:00:00.000Z' }))).toBe(false);
+    });
+});
+
+describe('nextTrackId', () => {
+    it('continues after the highest track number, whatever the order', () => {
+        expect(nextTrackId({ tracks: [track('track4', 1), track('track11', 1), track('custom', 1)] })).toBe('track12');
+        expect(nextTrackId({ tracks: [] })).toBe('track0');
+    });
+});
+
+describe('insertTrack', () => {
+    const manifest = { tracks: [track('track0', 1, { source: 'b.mp3' }), track('track1', 1, { source: 'd.mp3' })] };
+    const added = track('track2', 1, { source: 'c.mp3' });
+
+    it('appends by default', () => {
+        expect(insertTrack(manifest, added).tracks.map((t) => t.id)).toEqual(['track0', 'track1', 'track2']);
+    });
+
+    it('inserts in source order when sorted, without touching the original', () => {
+        expect(insertTrack(manifest, added, { sorted: true }).tracks.map((t) => t.id)).toEqual(['track0', 'track2', 'track1']);
+        expect(manifest.tracks).toHaveLength(2);
+    });
+});
+
+describe('parseTrackSelection', () => {
+    it('expands numbers and ranges into sorted unique indices', () => {
+        expect(parseTrackSelection(['55-57', '3', '56'], 100)).toEqual([3, 55, 56, 57]);
+    });
+
+    it('rejects invalid or out of range selections', () => {
+        expect(() => parseTrackSelection(['abc'], 10)).toThrow('Invalid track number or range: "abc"');
+        expect(() => parseTrackSelection(['8-12'], 10)).toThrow('outside the channel (tracks 0 to 9)');
+        expect(() => parseTrackSelection(['5-2'], 10)).toThrow('outside the channel');
+    });
+});
+
+describe('applyManifestEdits', () => {
+    const saved = { version: 1, channel: 'lofi', tracks: [track('track0', 10), track('track1', 20), track('track2', 30)] };
+
+    it('applies reordering, removals, titles and sources but keeps the encoding fields', () => {
+        const edited = {
+            channel: 'lofi',
+            tracks: [
+                { ...track('track2', 999), title: 'Renamed', source: 'new.mp3', duration: 999 },
+                { id: 'track0', title: 'track0' },
+            ],
+        };
+
+        const result = applyManifestEdits(saved, edited);
+
+        expect(result.tracks.map((t) => [t.id, t.title, t.source, t.duration])).toEqual([
+            ['track2', 'Renamed', 'new.mp3', 30],
+            ['track0', 'track0', 'track0.mp3', 10],
+        ]);
+    });
+
+    it('rejects unknown, duplicated or untitled tracks and another channel', () => {
+        const edited = { tracks: [{ id: 'track9', title: 'x' }, { id: 'track0', title: '' }, { id: 'track0', title: 'y' }] };
+
+        expect(() => applyManifestEdits(saved, edited)).toThrow(/unknown track id "track9"[\s\S]*"track0" has no title[\s\S]*"track0" is listed twice/);
+        expect(() => applyManifestEdits(saved, { channel: 'opera', tracks: [] })).toThrow('is for channel "opera"');
+        expect(() => applyManifestEdits(saved, { tracks: [] })).toThrow('has no tracks');
     });
 });

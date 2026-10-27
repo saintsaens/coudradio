@@ -1,52 +1,77 @@
-import { loadProgress, saveProgress } from "./progressSavingService.js";
 import { encodeTrack } from "../trackEncodingService.js";
-import { addTrackToChannelMpd } from "./channelMpdService.js";
+import { getTrackUrl } from "../../repositories/trackRepository.js";
+import { parseEncodedTrackMpd } from "../channelManifestService.js";
 import {
+    localChannelDirectoryFor,
     localTrackDirectoryFor,
-    cleanUpLocalTrackDirectory,
-    deleteLocalChannelDirectory
+    removeLocalDirectory
 } from "./fileSystemService.js";
 import { uploadSegment } from "./segmentsUploadingService.js";
 import fs from "fs/promises";
 import path from "path";
 
-export const processTracks = async ({ tracks, channelName }) => {
-    const lastProcessedIndex = await loadProgress(channelName);
-    const startIndex = lastProcessedIndex + 1;
+// A re-encoded track whose length changes by more than this is probably not the same recording
+export const DURATION_TOLERANCE_SECONDS = 1;
 
-    if (startIndex >= tracks.length) return;
+const timestamp = () => new Date().toLocaleTimeString('en-GB');
 
-    // Start encoding the first track
-    let encodePromise = encodeTrack(startIndex, tracks, channelName);
+const encodeJob = async (channelName, job) => {
+    const directory = localTrackDirectoryFor(channelName, job.id);
+    // Leftovers from an interrupted run would otherwise be uploaded with the new segments
+    await removeLocalDirectory(directory);
+    const input = await getTrackUrl(channelName, job.source);
+    const mpdPath = await encodeTrack({ input, directory, id: job.id });
+    return parseEncodedTrackMpd(await fs.readFile(mpdPath, 'utf-8'));
+};
 
-    for (let index = startIndex; index < tracks.length; index++) {
-        console.log(`[${new Date().toLocaleTimeString('en-GB')}] Processing track ${index + 1} of ${tracks.length}…`);
+// Encodes each job ({ id, source, expectedDuration? }) and uploads its segments, encoding the next track
+// while the current one uploads. onTrackDone(job, encoding) runs after each successful upload.
+// A failed track is reported and skipped; the others still go through.
+export const processTracks = async ({ channelName, jobs, onTrackDone }) => {
+    const failed = [];
+    const start = (job) => encodeJob(channelName, job).then(
+        (encoding) => ({ encoding }),
+        (error) => ({ error })
+    );
 
-        // Wait for current track's encoding to finish
-        const trackMpdPath = await encodePromise;
+    let next = jobs.length ? start(jobs[0]) : null;
+    for (let index = 0; index < jobs.length; index++) {
+        const job = jobs[index];
+        console.log(`[${timestamp()}] Encoding track ${index + 1} of ${jobs.length}: ${job.id} ${job.source}`);
 
-        // Immediately start encoding the next track (overlaps with upload below)
-        if (index + 1 < tracks.length) {
-            encodePromise = encodeTrack(index + 1, tracks, channelName);
+        const { encoding, error } = await next;
+        if (index + 1 < jobs.length) {
+            next = start(jobs[index + 1]);
         }
 
         try {
-            await uploadTrackSegments(channelName, index);
-            await addTrackToChannelMpd({ index, trackMpdPath, channelName });
-            await saveProgress(channelName, index);
-            await cleanUpLocalTrackDirectory(channelName, index);
+            if (error) throw error;
+            checkDuration(job, encoding);
+            await uploadTrackSegments(channelName, job.id);
+            await onTrackDone(job, encoding);
         } catch (err) {
-            console.error(`Error processing track ${index + 1}:`, err);
-            throw err;
+            console.error(`[${timestamp()}] ✗ ${job.id} ${job.source}: ${err.message}`);
+            failed.push({ job, error: err });
+        } finally {
+            await removeLocalDirectory(localTrackDirectoryFor(channelName, job.id));
         }
     }
 
-    await deleteLocalChannelDirectory(channelName);
+    await removeLocalDirectory(localChannelDirectoryFor(channelName));
+    return { failed };
 };
 
-export const uploadTrackSegments = async (channelName, trackIndex, concurrency = 4) => {
-    console.log(`[${new Date().toLocaleTimeString('en-GB')}] Uploading segments for track ${trackIndex + 1}…`);
-    const segments = await getAllTrackSegments(channelName, trackIndex);
+const checkDuration = (job, encoding) => {
+    if (job.expectedDuration === undefined) return;
+    const difference = Math.abs(encoding.duration - job.expectedDuration);
+    if (difference > DURATION_TOLERANCE_SECONDS) {
+        throw new Error(`The new encoding lasts ${encoding.duration.toFixed(1)}s instead of ${job.expectedDuration.toFixed(1)}s: is the source file the right one? Nothing was uploaded`);
+    }
+};
+
+export const uploadTrackSegments = async (channelName, trackId, concurrency = 4) => {
+    console.log(`[${timestamp()}] Uploading segments for ${trackId}…`);
+    const segments = await getAllTrackSegments(channelName, trackId);
     const results = [];
 
     const logProgress = createProgressLogger(segments.length, 100);
@@ -74,14 +99,14 @@ export const uploadTrackSegments = async (channelName, trackIndex, concurrency =
 
     const failedCount = results.filter(result => result === null).length;
     if (failedCount > 0) {
-        throw new Error(`Failed to upload ${failedCount} of ${segments.length} segments for track ${trackIndex + 1}`);
+        throw new Error(`Failed to upload ${failedCount} of ${segments.length} segments for ${trackId}`);
     }
 
     return results;
 };
 
-export const getAllTrackSegments = async (channelName, trackIndex) => {
-    const directory = localTrackDirectoryFor(channelName, trackIndex);
+export const getAllTrackSegments = async (channelName, trackId) => {
+    const directory = localTrackDirectoryFor(channelName, trackId);
 
     const files = await fs.readdir(directory);
 
@@ -100,7 +125,7 @@ const createProgressLogger = (total, step = 100) => {
     return () => {
         completed++;
         if (completed % step === 0 || completed === total) {
-            console.log(`[${new Date().toLocaleTimeString('en-GB')}] Uploaded ${completed}/${total} segments`);
+            console.log(`[${timestamp()}] Uploaded ${completed}/${total} segments`);
         }
     };
 };

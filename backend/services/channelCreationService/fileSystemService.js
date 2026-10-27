@@ -9,26 +9,10 @@ export const localChannelDirectoryFor = (channelName) => {
     return path.join(process.env.PUBLIC_DIR, channelName);
 };
 
-export const localTrackDirectoryFor = (channelName, index) => {
+export const localTrackDirectoryFor = (channelName, trackId) => {
     validateEnv();
-    return path.join(process.env.PUBLIC_DIR, channelName, `track${index}`);
+    return path.join(process.env.PUBLIC_DIR, channelName, trackId);
 };
-
-export const cleanUpLocalTrackDirectory = async (channelName, index) => {
-    const dir = localTrackDirectoryFor(channelName, index);
-    try {
-        await fsPromises.rm(dir, { recursive: true });
-    } catch (error) {
-        if (error.code !== 'ENOENT') {
-            console.error(`Failed to delete directory at ${dir}: ${error.message}`);
-        }
-    }
-};
-
-export const localMpdDirectory = () => {
-    validateEnv();
-    return path.join(process.env.PUBLIC_MPD_PATH);
-}
 
 export const ensureDirectoryExists = async (dirPath) => {
     try {
@@ -40,46 +24,16 @@ export const ensureDirectoryExists = async (dirPath) => {
     }
 };
 
-
-export const deleteLocalChannelDirectory = async (channelName) => {
-    const dir = localChannelDirectoryFor(channelName);
+export const removeLocalDirectory = async (dir) => {
     try {
-        await fsPromises.rm(dir, { recursive: true });
+        await fsPromises.rm(dir, { recursive: true, force: true });
     } catch (error) {
         console.error(`Failed to delete directory at ${dir}: ${error.message}`);
     }
 };
 
-export const channelMpdPathFor = (channelName) => {
-    validateEnv();
-    return path.join(process.env.PUBLIC_MPD_PATH, `${channelName}.mpd`);
-};
-
-
-export const cleanUpLocalChannelDirectory = async (channelName) => {
-    const dir = localChannelDirectoryFor(channelName);
-
-    try {
-        const entries = await fsPromises.readdir(dir, { withFileTypes: true });
-
-        for (const entry of entries) {
-            const entryPath = path.join(dir, entry.name);
-
-            if (entry.isDirectory()) {
-                await fsPromises.rm(entryPath, { recursive: true, force: true });
-            } else {
-                await fsPromises.unlink(entryPath);
-            }
-        }
-    } catch (err) {
-        if (err.code !== "ENOENT") {
-            throw err;
-        }
-    }
-};
-
 const validateEnv = () => {
-    if (!process.env.PUBLIC_MPD_PATH || !process.env.PUBLIC_DIR) {
-        throw new Error('PUBLIC_MPD_PATH is not set');
+    if (!process.env.PUBLIC_DIR) {
+        throw new Error('PUBLIC_DIR is not set');
     }
 };

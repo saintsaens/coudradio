@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import './loadEnv.js';
+import fs from 'fs/promises';
 import * as mpdRepository from '../repositories/mpdRepository.js';
 import { listSegmentNames } from '../repositories/segmentsRepository.js';
 import { getTracks } from '../repositories/trackRepository.js';
@@ -9,10 +10,13 @@ import {
     compareWithSources,
     describeTracks,
     findSegmentProblems,
+    isOutdated,
     isUrlDifference,
+    LOUDNORM_DATE,
     loadChannelManifest,
     parseChannelMpd,
 } from '../services/channelManifestService.js';
+import { addTracks, reencodeTracks, syncChannel } from '../services/channelMaintenanceService.js';
 
 const USAGE = `Usage: npm run channel -- <command>
 
@@ -20,9 +24,16 @@ const USAGE = `Usage: npm run channel -- <command>
   tracks <channel> [--sources]      Tracklist with start times and what is playing now
   verify <channel>                  Checks the segments in MinIO and that the live MPD matches the channel
   bootstrap <channel…|--all> [--write] [--force]
-                                    Creates channel.json from the live MPD (dry run unless --write)`;
-
-const LOUDNORM_DATE = new Date('2026-03-29');
+                                    Creates channel.json from the live MPD (dry run unless --write)
+  sync <channel…|--all> [--dry-run] Regenerates the MPD and tracks.json from channel.json
+  sync <channel> --file <path>      Applies an edited channel.json (reorder, remove, retitle, set sources)
+  export <channel> [path]           Saves channel.json locally for editing (default: ./<channel>.json)
+  add <channel> [file…] [--sorted] [--dry-run]
+                                    Encodes bucket files not in the channel yet and appends them
+                                    (--sorted inserts them in source order). Creates the channel if needed
+  reencode <channel> [#|from-to…] [--missing] [--outdated] [--all] [--force] [--dry-run]
+                                    Re-encodes tracks from their source file: given numbers, tracks with
+                                    missing segments, or tracks encoded before loudness normalization`;
 const DIFFERENCE_LABELS = {
     initialization: 'init segment URL',
     media: 'media segment URL',
@@ -55,19 +66,23 @@ const printManifestOrigin = (channel, manifest, persisted, warnings) => {
     warnings.forEach((warning) => console.log(`⚠ ${warning}`));
 };
 
-const printDifferences = (differences, indent = '') => {
+const printDifferences = (differences, indent = '', marker = '✗') => {
     const byField = new Map();
     for (const difference of differences) {
         byField.set(difference.field, [...(byField.get(difference.field) ?? []), difference]);
     }
     for (const [field, list] of byField) {
         const [first] = list;
+        if (field === 'mpd') {
+            console.log(`${indent}${marker} No MPD yet`);
+            continue;
+        }
         if (field === 'trackCount') {
-            console.log(`${indent}✗ The live MPD has ${first.before} tracks, the channel has ${first.after}`);
+            console.log(`${indent}${marker} The live MPD has ${first.before} tracks, the channel has ${first.after}`);
             continue;
         }
         const label = DIFFERENCE_LABELS[field] ?? field;
-        console.log(`${indent}✗ ${list.length} tracks differ in ${label}, e.g. #${first.index}: ${first.before} → ${first.after}`);
+        console.log(`${indent}${marker} ${list.length} tracks differ in ${label}, e.g. #${first.index}: ${first.before} → ${first.after}`);
     }
 };
 
@@ -95,7 +110,12 @@ const getChannelStatus = async (channel) => {
         notes.push(`bucket has ${sources.length} files`);
     }
 
-    return { channel, stat, trackCount, hours, hasManifest: Boolean(manifest), notes };
+    // Bootstrapped tracks carry the MPD upload date, so this matches the MPD date check until tracks get re-encoded
+    const outdatedTracks = manifest
+        ? manifest.tracks.filter(isOutdated).length
+        : (stat && stat.lastModified < LOUDNORM_DATE ? trackCount : 0);
+
+    return { channel, stat, trackCount, hours, hasManifest: Boolean(manifest), outdatedTracks, notes };
 };
 
 const status = async (channels) => {
@@ -117,8 +137,9 @@ const status = async (channels) => {
     let needsReencode = false;
     for (const result of results) {
         const exists = Boolean(result.stat);
-        const outdated = exists && result.stat.lastModified < LOUDNORM_DATE;
+        const outdated = result.outdatedTracks > 0;
         needsReencode ||= outdated;
+        if (outdated && result.outdatedTracks < result.trackCount) result.notes.push(`${result.outdatedTracks} tracks to re-encode`);
         console.log([
             result.channel.padEnd(COL.channel),
             (exists ? '✓ Ready' : '✗ Missing').padEnd(COL.mpd),
@@ -130,7 +151,9 @@ const status = async (channels) => {
         ].join(''));
     }
 
-    if (needsReencode) console.log(`\n⚠ MPD older than loudness normalization (${formatDate(LOUDNORM_DATE)}): re-encode needed`);
+    if (needsReencode) {
+        console.log(`\n⚠ Tracks encoded before loudness normalization (${formatDate(LOUDNORM_DATE)}): run "reencode <channel> --outdated"`);
+    }
     console.log('');
 };
 
@@ -265,11 +288,123 @@ const bootstrap = async (channels, flags) => {
     }
 };
 
-const COMMANDS = { status, tracks, verify, bootstrap };
+const printTitleChanges = (titleChanges, indent = '') => {
+    if (!titleChanges.length) return;
+    const [first] = titleChanges;
+    console.log(`${indent}~ ${titleChanges.length} titles change in tracks.json, e.g. #${first.index}: ${first.before ?? '(none)'} → ${first.after ?? '(removed)'}`);
+};
 
+const sync = async (channels, flags) => {
+    const targets = flags.all
+        ? (await Promise.all((await mpdRepository.listChannelNames()).map(async (channel) =>
+            (await mpdRepository.getChannelManifest(channel)) ? channel : null))).filter(Boolean)
+        : channels;
+    requireChannel(targets[0]);
+    if ('file' in flags && !flags.file) throw new Error('--file needs a path');
+    if (flags.file && targets.length > 1) throw new Error('--file applies to a single channel');
+
+    const edited = flags.file ? JSON.parse(await fs.readFile(flags.file, 'utf-8')) : null;
+    for (const channel of targets) {
+        console.log(`\n${channel}`);
+        try {
+            const { manifest, differences, titleChanges, manifestChanged, upToDate } = await syncChannel({ channel, edited, dryRun: flags['dry-run'] });
+            if (upToDate) {
+                console.log('  ✓ Already up to date');
+                continue;
+            }
+            if (manifestChanged) console.log(`  ~ channel.json updated (${manifest.tracks.length} tracks)`);
+            printDifferences(differences, '  ', '~');
+            printTitleChanges(titleChanges, '  ');
+            console.log(flags['dry-run'] ? '  Dry run: nothing uploaded' : '  ✓ Published the MPD and tracks.json');
+        } catch (err) {
+            console.log(`  ✗ ${err.message}`);
+            process.exitCode = 1;
+        }
+    }
+};
+
+const exportManifest = async ([channel, file]) => {
+    requireChannel(channel);
+    const manifest = await mpdRepository.getChannelManifest(channel);
+    if (!manifest) throw new Error(`Channel "${channel}" has no channel.json`);
+    const target = file ?? `${channel}.json`;
+    await fs.writeFile(target, `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`Saved ${manifest.tracks.length} tracks to ${target}`);
+    console.log(`Edit titles, sources or the order, remove tracks, then run: npm run channel -- sync ${channel} --file ${target}`);
+};
+
+const printFailures = (failed) => {
+    if (!failed.length) return;
+    process.exitCode = 1;
+    console.log(`\n✗ ${failed.length} tracks failed:`);
+    failed.forEach(({ job, error }) => console.log(`  ${job.id} ${job.source}: ${error.message}`));
+};
+
+const add = async ([channel, ...files], flags) => {
+    requireChannel(channel);
+    const { jobs, skipped, added, failed } = await addTracks({ channel, files, sorted: flags.sorted, dryRun: flags['dry-run'] });
+
+    if (skipped.length) console.log(`Already in the channel: ${formatList(skipped, 5)}`);
+    if (!jobs.length) {
+        console.log(`No new files to add to ${channel}`);
+        return;
+    }
+    if (flags['dry-run']) {
+        console.log(`Would add ${jobs.length} tracks to ${channel}${flags.sorted ? ' in source order' : ' at the end'}:`);
+        jobs.forEach((job) => console.log(`  ${job.id}  ${job.source}`));
+        return;
+    }
+
+    if (added.length) console.log(`\n✓ Added ${added.length} tracks to ${channel} and published the MPD`);
+    printFailures(failed);
+};
+
+const reencode = async ([channel, ...selection], flags) => {
+    requireChannel(channel);
+    if (!selection.length && !flags.missing && !flags.outdated && !flags.all) {
+        console.error(USAGE);
+        process.exit(1);
+    }
+
+    const { jobs, reencoded, failed } = await reencodeTracks({
+        channel,
+        args: selection,
+        missing: flags.missing,
+        outdated: flags.outdated,
+        all: flags.all,
+        force: flags.force,
+        dryRun: flags['dry-run'],
+    });
+
+    if (!jobs.length) {
+        console.log(`No tracks to re-encode in ${channel}`);
+        return;
+    }
+    if (flags['dry-run']) {
+        console.log(`Would re-encode ${jobs.length} tracks of ${channel}:`);
+        jobs.forEach((job) => console.log(`  #${job.index}  ${job.id}  ${job.source}`));
+        return;
+    }
+
+    if (reencoded.length) console.log(`\n✓ Re-encoded ${reencoded.length} tracks of ${channel} and published the MPD`);
+    printFailures(failed);
+};
+
+const COMMANDS = { status, tracks, verify, bootstrap, sync, export: exportManifest, add, reencode };
+
+const VALUE_FLAGS = ['file'];
 const [command, ...rest] = process.argv.slice(2);
-const flags = Object.fromEntries(rest.filter((arg) => arg.startsWith('--')).map((arg) => [arg.slice(2), true]));
-const args = rest.filter((arg) => !arg.startsWith('--'));
+const flags = {};
+const args = [];
+for (let index = 0; index < rest.length; index++) {
+    const arg = rest[index];
+    if (!arg.startsWith('--')) {
+        args.push(arg);
+        continue;
+    }
+    const name = arg.slice(2);
+    flags[name] = VALUE_FLAGS.includes(name) ? rest[++index] : true;
+}
 
 if (!COMMANDS[command]) {
     console.error(USAGE);
