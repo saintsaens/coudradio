@@ -1,7 +1,7 @@
 import xml2js from 'xml2js';
 import { getMpd, getTrackList } from '../repositories/mpdRepository.js';
+import { PLAYLIST_START } from '../utils/playlistClock.js';
 
-export const PLAYLIST_START = new Date('2024-05-04T13:37:00+01:00').getTime() / 1000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map();
 

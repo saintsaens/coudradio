@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs/promises';
-import { processTracks, uploadTrackSegments } from '../../services/channelCreationService/trackProcessingService.js';
-import { localTrackDirectoryFor, removeLocalDirectory } from '../../services/channelCreationService/fileSystemService.js';
-import { uploadSegment } from '../../services/channelCreationService/segmentsUploadingService.js';
-import { encodeTrack } from '../../services/trackEncodingService.js';
+import { processTracks, uploadTrackSegments } from '../trackProcessingService.js';
+import { localChannelDirectoryFor, localTrackDirectoryFor, removeLocalDirectory } from '../fileSystemService.js';
+import { uploadSegment } from '../segmentsUploadingService.js';
+import { encodeTrack } from '../trackEncodingService.js';
+import { getTrackUrl } from '../../repositories/trackRepository.js';
 
 vi.mock('fs/promises', () => ({
     default: {
@@ -12,22 +13,22 @@ vi.mock('fs/promises', () => ({
     },
 }));
 
-vi.mock('../../services/channelCreationService/fileSystemService.js', () => ({
-    localChannelDirectoryFor: vi.fn((channel) => `/tmp/${channel}`),
-    localTrackDirectoryFor: vi.fn((channel, id) => `/tmp/${channel}/${id}`),
+vi.mock('../fileSystemService.js', () => ({
+    localChannelDirectoryFor: vi.fn(),
+    localTrackDirectoryFor: vi.fn(),
     removeLocalDirectory: vi.fn(),
 }));
 
-vi.mock('../../services/channelCreationService/segmentsUploadingService.js', () => ({
+vi.mock('../segmentsUploadingService.js', () => ({
     uploadSegment: vi.fn(),
 }));
 
-vi.mock('../../services/trackEncodingService.js', () => ({
+vi.mock('../trackEncodingService.js', () => ({
     encodeTrack: vi.fn(),
 }));
 
 vi.mock('../../repositories/trackRepository.js', () => ({
-    getTrackUrl: vi.fn(async (channel, source) => `https://minio.test/${channel}/${source}`),
+    getTrackUrl: vi.fn(),
 }));
 
 // What ffmpeg writes for a single track: the period has no duration, the MPD does
@@ -46,6 +47,10 @@ const encodedMpd = (duration) => `<?xml version="1.0" encoding="utf-8"?>
 beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Set here rather than in the vi.mock factories: tests/setup.js resets every mock before each test
+    vi.mocked(localChannelDirectoryFor).mockImplementation((channel) => `/tmp/${channel}`);
+    vi.mocked(localTrackDirectoryFor).mockImplementation((channel, id) => `/tmp/${channel}/${id}`);
+    vi.mocked(getTrackUrl).mockImplementation(async (channel, source) => `https://minio.test/${channel}/${source}`);
     vi.mocked(fs.readdir).mockResolvedValue(['track0_init.mp4', 'track0_1.m4s', 'track0_2.m4s', 'track0.mpd']);
     vi.mocked(uploadSegment).mockImplementation(async (_, segmentName, channel) => `segments/${channel}/${segmentName}`);
     vi.mocked(encodeTrack).mockImplementation(async ({ directory, id }) => `${directory}/${id}.mpd`);

@@ -19,8 +19,8 @@ import {
     parseTrackSelection,
     stripAudioExtension,
     titleFromSource,
-} from '../../services/channelManifestService.js';
-import { PLAYLIST_START } from '../../services/metadataService.js';
+} from '../channelManifestService.js';
+import { PLAYLIST_START } from '../../utils/playlistClock.js';
 import * as mpdRepository from '../../repositories/mpdRepository.js';
 import { getTracks } from '../../repositories/trackRepository.js';
 

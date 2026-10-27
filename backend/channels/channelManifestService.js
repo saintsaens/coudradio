@@ -8,8 +8,8 @@ import {
     createMediaSegmentRoute,
     iso8601DurationToSeconds,
     secondsToIso8601Duration,
-} from './mpdService.js';
-import { PLAYLIST_START } from './metadataService.js';
+} from './mpdBuilderService.js';
+import { PLAYLIST_START } from '../utils/playlistClock.js';
 
 export const MANIFEST_VERSION = 1;
 // Tracks encoded before this date were not loudness-normalized

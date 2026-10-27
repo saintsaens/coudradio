@@ -9,7 +9,7 @@
     "test:ui": "vitest --ui",
     "start-server": "node server.js",
     "start-server-dev": "nodemon server.js",
-    "channel": "node scripts/channel.js",
+    "channel": "node channels/cli.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
@@ -24,7 +24,6 @@
     "express": "^4.19.2",
     "express-promise-router": "^4.1.1",
     "express-session": "^1.18.1",
-    "ffmpeg": "^0.0.4",
     "fluent-ffmpeg": "^2.1.3",
     "https": "^1.0.0",
     "minio": "^8.0.3",

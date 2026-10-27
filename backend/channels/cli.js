@@ -15,8 +15,8 @@ import {
     LOUDNORM_DATE,
     loadChannelManifest,
     parseChannelMpd,
-} from '../services/channelManifestService.js';
-import { addTracks, reencodeTracks, syncChannel } from '../services/channelMaintenanceService.js';
+} from './channelManifestService.js';
+import { addTracks, reencodeTracks, syncChannel } from './channelMaintenanceService.js';
 
 const USAGE = `Usage: npm run channel -- <command>
 

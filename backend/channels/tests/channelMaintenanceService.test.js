@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { addTracks, publishChannel, reencodeTracks, syncChannel } from '../../services/channelMaintenanceService.js';
-import { buildChannelMpd } from '../../services/channelManifestService.js';
-import { processTracks } from '../../services/channelCreationService/trackProcessingService.js';
+import { addTracks, publishChannel, reencodeTracks, syncChannel } from '../channelMaintenanceService.js';
+import { buildChannelMpd } from '../channelManifestService.js';
+import { processTracks } from '../trackProcessingService.js';
 import * as mpdRepository from '../../repositories/mpdRepository.js';
 import { listSegmentNames } from '../../repositories/segmentsRepository.js';
 import { getTracks } from '../../repositories/trackRepository.js';
@@ -25,7 +25,7 @@ vi.mock('../../repositories/trackRepository.js', async (importOriginal) => ({
     getTracks: vi.fn(),
 }));
 
-vi.mock('../../services/channelCreationService/trackProcessingService.js', () => ({
+vi.mock('../trackProcessingService.js', () => ({
     processTracks: vi.fn(),
 }));
 

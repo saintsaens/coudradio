@@ -1,6 +1,6 @@
 import ffmpeg from 'fluent-ffmpeg';
 import path from "path";
-import { ensureDirectoryExists } from "./channelCreationService/fileSystemService.js";
+import { ensureDirectoryExists } from "./fileSystemService.js";
 
 const getTrackDuration = (trackUrl) =>
   new Promise((resolve, reject) => {

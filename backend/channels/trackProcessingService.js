@@ -1,6 +1,6 @@
-import { encodeTrack } from "../trackEncodingService.js";
-import { getTrackUrl } from "../../repositories/trackRepository.js";
-import { parseEncodedTrackMpd } from "../channelManifestService.js";
+import { encodeTrack } from "./trackEncodingService.js";
+import { getTrackUrl } from "../repositories/trackRepository.js";
+import { parseEncodedTrackMpd } from "./channelManifestService.js";
 import {
     localChannelDirectoryFor,
     localTrackDirectoryFor,

@@ -1,7 +1,7 @@
 import * as mpdRepository from '../repositories/mpdRepository.js';
 import { listSegmentNames } from '../repositories/segmentsRepository.js';
 import { getTracks } from '../repositories/trackRepository.js';
-import { processTracks } from './channelCreationService/trackProcessingService.js';
+import { processTracks } from './trackProcessingService.js';
 import {
     applyManifestEdits,
     buildChannelMpd,

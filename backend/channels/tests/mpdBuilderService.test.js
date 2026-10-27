@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { iso8601DurationToSeconds, secondsToIso8601Duration } from "../../services/mpdService.js";
+import { iso8601DurationToSeconds, secondsToIso8601Duration } from "../mpdBuilderService.js";
 
 describe("iso8601DurationToSeconds", () => {
     it("converts hours, minutes and fractional seconds", () => {
