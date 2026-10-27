@@ -1,11 +1,17 @@
 import fs from 'fs/promises';
-import * as mpdRepository from '../../repositories/mpdRepository.js';
-import { listSegmentNames } from '../../repositories/segmentsRepository.js';
-import { getTracks } from '../../repositories/trackRepository.js';
-import { describeTracks, isOutdated, LOUDNORM_DATE } from '../manifest/manifest.js';
-import { compareManifestWithMpd, compareWithSources, findSegmentProblems, isUrlDifference } from '../manifest/checks.js';
-import { parseChannelMpd } from '../mpd/parse.js';
-import { addTracks, bootstrapChannel, loadChannelManifest, reencodeTracks, syncChannel } from '../maintenance.js';
+import { describeTracks, LOUDNORM_DATE } from '../manifest/manifest.js';
+import { compareWithSources } from '../manifest/checks.js';
+import {
+    addTracks,
+    bootstrapChannelManifest,
+    getChannelStatus,
+    listChannels,
+    loadChannelWithSources,
+    loadSavedManifest,
+    reencodeTracks,
+    syncChannel,
+    verifyChannel,
+} from '../maintenance.js';
 import {
     formatClock,
     formatDate,
@@ -23,40 +29,8 @@ const requireChannel = (channel) => {
     if (!channel) throw new UsageError();
 };
 
-const getChannelStatus = async (channel) => {
-    const [stat, mpdXml, manifest, trackList, sources] = await Promise.all([
-        mpdRepository.getMpdStat(channel),
-        mpdRepository.getMpdContent(channel),
-        mpdRepository.getChannelManifest(channel),
-        mpdRepository.getTrackList(channel),
-        getTracks(channel).catch(() => null),
-    ]);
-    const mpd = mpdXml ? await parseChannelMpd(mpdXml) : null;
-    const trackCount = mpd ? mpd.periods.length : null;
-    const hours = mpd ? mpd.periods.reduce((total, period) => total + period.duration, 0) / 3600 : null;
-
-    const notes = [];
-    if (!sources) notes.push('no source bucket');
-    if (mpd && !trackList) notes.push('no tracks.json');
-    if (mpd && trackList && trackList.length !== trackCount) notes.push(`tracks.json has ${trackList.length} titles`);
-    if (manifest && sources) {
-        const { unencoded, missing } = compareWithSources(manifest, sources);
-        if (unencoded.length) notes.push(`${unencoded.length} new files`);
-        if (missing.length) notes.push(`${missing.length} source files gone`);
-    } else if (mpd && sources && sources.length !== trackCount) {
-        notes.push(`bucket has ${sources.length} files`);
-    }
-
-    // Bootstrapped tracks carry the MPD upload date, so this matches the MPD date check until tracks get re-encoded
-    const outdatedTracks = manifest
-        ? manifest.tracks.filter(isOutdated).length
-        : (stat && stat.lastModified < LOUDNORM_DATE ? trackCount : 0);
-
-    return { channel, stat, trackCount, hours, hasManifest: Boolean(manifest), outdatedTracks, notes };
-};
-
 const status = async (channels) => {
-    const targets = channels.length ? channels : await mpdRepository.listChannelNames();
+    const targets = channels.length ? channels : await listChannels();
     if (!targets.length) {
         console.log('No channels found.');
         return;
@@ -96,10 +70,7 @@ const status = async (channels) => {
 
 const tracks = async ([channel], flags) => {
     requireChannel(channel);
-    const [{ manifest, persisted, warnings }, sources] = await Promise.all([
-        loadChannelManifest(channel),
-        getTracks(channel).catch(() => null),
-    ]);
+    const { manifest, persisted, warnings, sources } = await loadChannelWithSources(channel);
     const { rows, total, current, position } = describeTracks(manifest);
 
     printManifestOrigin(channel, manifest, persisted, warnings);
@@ -138,17 +109,11 @@ const tracks = async ([channel], flags) => {
 
 const verify = async ([channel]) => {
     requireChannel(channel);
-    const { manifest, persisted, warnings } = await loadChannelManifest(channel);
+    const { manifest, persisted, warnings, segmentCount, problems, orphanPrefixes, differences } = await verifyChannel(channel);
     printManifestOrigin(channel, manifest, persisted, warnings);
-
-    const [segmentNames, mpdXml] = await Promise.all([
-        listSegmentNames(channel),
-        mpdRepository.getMpdContent(channel),
-    ]);
     let healthy = true;
 
-    console.log(`\nSegments: checking ${manifest.tracks.length} tracks against ${segmentNames.length} objects in MinIO`);
-    const { problems, orphanPrefixes } = findSegmentProblems(manifest, segmentNames);
+    console.log(`\nSegments: checking ${manifest.tracks.length} tracks against ${segmentCount} objects in MinIO`);
     if (!problems.length) console.log('✓ Every track has its init segment and all its media segments');
     for (const problem of problems) {
         healthy = false;
@@ -162,49 +127,46 @@ const verify = async ([channel]) => {
     if (orphanPrefixes.length) console.log(`ℹ Segments not used by the channel: ${formatList(orphanPrefixes, 8)}`);
 
     console.log('\nMPD:');
-    if (!mpdXml) {
+    if (!differences) {
         healthy = false;
         console.log('✗ No MPD in MinIO');
+    } else if (differences.length) {
+        healthy = false;
+        printDifferences(differences);
     } else {
-        const differences = await compareManifestWithMpd(manifest, await parseChannelMpd(mpdXml));
-        if (differences.length) {
-            healthy = false;
-            printDifferences(differences);
-        } else {
-            console.log('✓ The live MPD matches the channel');
-        }
+        console.log('✓ The live MPD matches the channel');
     }
 
     if (!healthy) process.exitCode = 1;
 };
 
 const bootstrap = async (channels, flags) => {
-    const targets = flags.all ? await mpdRepository.listChannelNames() : channels;
+    const targets = flags.all ? await listChannels() : channels;
     requireChannel(targets[0]);
 
     for (const channel of targets) {
         console.log(`\n${channel}`);
         try {
-            if (!(await mpdRepository.getMpdStat(channel))) {
+            const result = await bootstrapChannelManifest({ channel, write: flags.write, force: flags.force });
+            if (result.skipped === 'no-mpd') {
                 console.log('  No MPD, skipping');
                 continue;
             }
-            if (!flags.force && await mpdRepository.getChannelManifest(channel)) {
+            if (result.skipped === 'exists') {
                 console.log('  channel.json already exists, skipping (use --force to overwrite)');
                 continue;
             }
 
-            const { manifest, warnings, differences } = await bootstrapChannel(channel);
+            const { manifest, warnings, urlDifferences, blocking, objectPath } = result;
             const mappedCount = manifest.tracks.filter((track) => track.source).length;
             console.log(`  ${manifest.tracks.length} tracks, ${mappedCount} mapped to a source file`);
             warnings.forEach((warning) => console.log(`  ⚠ ${warning}`));
 
-            const urlChanges = new Set(differences.filter(isUrlDifference).map((difference) => difference.index));
+            const urlChanges = new Set(urlDifferences.map((difference) => difference.index));
             if (urlChanges.size) {
                 console.log(`  ℹ ${urlChanges.size} tracks in the live MPD use another segment URL; regenerating the MPD will point them to ${process.env.BACKEND_URL}`);
             }
 
-            const blocking = differences.filter((difference) => !isUrlDifference(difference));
             if (blocking.length) {
                 printDifferences(blocking, '  ');
                 console.log('  ✗ Not saved: the manifest does not reproduce the live MPD');
@@ -212,8 +174,7 @@ const bootstrap = async (channels, flags) => {
                 continue;
             }
 
-            if (flags.write) {
-                const objectPath = await mpdRepository.uploadChannelManifest(channel, manifest);
+            if (objectPath) {
                 console.log(`  ✓ Saved ${objectPath}`);
             } else {
                 console.log('  Dry run: re-run with --write to save channel.json');
@@ -226,10 +187,7 @@ const bootstrap = async (channels, flags) => {
 };
 
 const sync = async (channels, flags) => {
-    const targets = flags.all
-        ? (await Promise.all((await mpdRepository.listChannelNames()).map(async (channel) =>
-            (await mpdRepository.getChannelManifest(channel)) ? channel : null))).filter(Boolean)
-        : channels;
+    const targets = flags.all ? await listChannels({ withManifest: true }) : channels;
     requireChannel(targets[0]);
     if ('file' in flags && !flags.file) throw new Error('--file needs a path');
     if (flags.file && targets.length > 1) throw new Error('--file applies to a single channel');
@@ -256,8 +214,7 @@ const sync = async (channels, flags) => {
 
 const exportManifest = async ([channel, file]) => {
     requireChannel(channel);
-    const manifest = await mpdRepository.getChannelManifest(channel);
-    if (!manifest) throw new Error(`Channel "${channel}" has no channel.json`);
+    const manifest = await loadSavedManifest(channel);
     const target = file ?? `${channel}.json`;
     await fs.writeFile(target, `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`Saved ${manifest.tracks.length} tracks to ${target}`);

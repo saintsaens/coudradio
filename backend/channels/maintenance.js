@@ -8,11 +8,12 @@ import {
     createManifest,
     insertTrack,
     isOutdated,
+    LOUDNORM_DATE,
     nextTrackId,
     parseTrackSelection,
     titleFromSource,
 } from './manifest/manifest.js';
-import { compareManifestWithMpd, compareWithSources, findSegmentProblems } from './manifest/checks.js';
+import { compareManifestWithMpd, compareWithSources, findSegmentProblems, isUrlDifference } from './manifest/checks.js';
 import { buildChannelMpd, buildTrackList } from './mpd/build.js';
 import { parseChannelMpd } from './mpd/parse.js';
 
@@ -45,6 +46,80 @@ export const loadChannelManifest = async (channel) => {
     return { manifest: bootstrapped, persisted: false, warnings };
 };
 
+// Derives channel.json from the live MPD and, with write, saves it. Segment URLs may differ (regenerating the MPD
+// points them to BACKEND_URL); any other difference means the manifest would not reproduce the live MPD, so it is not saved.
+export const bootstrapChannelManifest = async ({ channel, write = false, force = false }) => {
+    if (!(await mpdRepository.getMpdStat(channel))) return { skipped: 'no-mpd' };
+    if (!force && await mpdRepository.getChannelManifest(channel)) return { skipped: 'exists' };
+
+    const { manifest, warnings, differences } = await bootstrapChannel(channel);
+    const urlDifferences = differences.filter(isUrlDifference);
+    const blocking = differences.filter((difference) => !isUrlDifference(difference));
+    const objectPath = write && !blocking.length ? await mpdRepository.uploadChannelManifest(channel, manifest) : null;
+    return { manifest, warnings, urlDifferences, blocking, objectPath };
+};
+
+// With withManifest, only the channels that have a channel.json
+export const listChannels = async ({ withManifest = false } = {}) => {
+    const channels = await mpdRepository.listChannelNames();
+    if (!withManifest) return channels;
+    const manifests = await Promise.all(channels.map((channel) => mpdRepository.getChannelManifest(channel)));
+    return channels.filter((_, index) => manifests[index]);
+};
+
+export const getChannelStatus = async (channel) => {
+    const [stat, mpdXml, manifest, trackList, sources] = await Promise.all([
+        mpdRepository.getMpdStat(channel),
+        mpdRepository.getMpdContent(channel),
+        mpdRepository.getChannelManifest(channel),
+        mpdRepository.getTrackList(channel),
+        getTracks(channel).catch(() => null),
+    ]);
+    const mpd = mpdXml ? await parseChannelMpd(mpdXml) : null;
+    const trackCount = mpd ? mpd.periods.length : null;
+    const hours = mpd ? mpd.periods.reduce((total, period) => total + period.duration, 0) / 3600 : null;
+
+    const notes = [];
+    if (!sources) notes.push('no source bucket');
+    if (mpd && !trackList) notes.push('no tracks.json');
+    if (mpd && trackList && trackList.length !== trackCount) notes.push(`tracks.json has ${trackList.length} titles`);
+    if (manifest && sources) {
+        const { unencoded, missing } = compareWithSources(manifest, sources);
+        if (unencoded.length) notes.push(`${unencoded.length} new files`);
+        if (missing.length) notes.push(`${missing.length} source files gone`);
+    } else if (mpd && sources && sources.length !== trackCount) {
+        notes.push(`bucket has ${sources.length} files`);
+    }
+
+    // Bootstrapped tracks carry the MPD upload date, so this matches the MPD date check until tracks get re-encoded
+    const outdatedTracks = manifest
+        ? manifest.tracks.filter(isOutdated).length
+        : (stat && stat.lastModified < LOUDNORM_DATE ? trackCount : 0);
+
+    return { channel, stat, trackCount, hours, hasManifest: Boolean(manifest), outdatedTracks, notes };
+};
+
+// The channel as loadChannelManifest returns it, with its source bucket listing (null when it cannot be listed)
+export const loadChannelWithSources = async (channel) => {
+    const [loaded, sources] = await Promise.all([
+        loadChannelManifest(channel),
+        getTracks(channel).catch(() => null),
+    ]);
+    return { ...loaded, sources };
+};
+
+// Checks the channel's segments in MinIO and whether the live MPD matches it (differences is null when there is no MPD)
+export const verifyChannel = async (channel) => {
+    const { manifest, persisted, warnings } = await loadChannelManifest(channel);
+    const [segmentNames, mpdXml] = await Promise.all([
+        listSegmentNames(channel),
+        mpdRepository.getMpdContent(channel),
+    ]);
+    const { problems, orphanPrefixes } = findSegmentProblems(manifest, segmentNames);
+    const differences = mpdXml ? await compareManifestWithMpd(manifest, await parseChannelMpd(mpdXml)) : null;
+    return { manifest, persisted, warnings, segmentCount: segmentNames.length, problems, orphanPrefixes, differences };
+};
+
 // Uploads channel.json, then the MPD and tracks.json generated from it. Segments must already be uploaded.
 export const publishChannel = async (manifest) => {
     if (!manifest.tracks.length) {
@@ -56,7 +131,7 @@ export const publishChannel = async (manifest) => {
     await mpdRepository.uploadTrackList(channel, buildTrackList(manifest));
 };
 
-const loadSavedManifest = async (channel) => {
+export const loadSavedManifest = async (channel) => {
     const manifest = await mpdRepository.getChannelManifest(channel);
     if (!manifest) {
         throw new Error(`Channel "${channel}" has no channel.json: run "npm run channel -- bootstrap ${channel} --write" first`);

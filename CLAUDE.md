@@ -59,8 +59,8 @@ Both sides share the MinIO client (`db-media/`), the repositories and the playli
 
 ### Channel management (`backend/channels/`)
 Dependencies point one way: `cli/` → `maintenance.js` → `encoding/`, `manifest/`, `mpd/` → repositories.
-- `cli/` — argument parsing (`index.js`), one function per command (`commands.js`), console output (`format.js`), plus `upload.js` to fill a source bucket
-- `maintenance.js` — every operation that reads or writes MinIO: add, re-encode, sync, publish, bootstrap, load a channel
+- `cli/` — argument parsing (`index.js`), one function per command (`commands.js`), console output (`format.js`), plus `upload.js` to fill a source bucket. Commands never call MinIO: they call `maintenance.js` and may use the pure modules to present its results
+- `maintenance.js` — every operation that reads or writes MinIO: add, re-encode, sync, publish, bootstrap, verify, status, list and load channels
 - `manifest/` — pure: the `channel.json` model (`manifest.js`) and consistency checks against the MPD, the source bucket and the segments (`checks.js`)
 - `mpd/` — pure: build, parse and ISO 8601 durations of DASH manifests
 - `encoding/` — ffmpeg (`encodeTrack.js`), the encode-then-upload loop (`processTracks.js`), segment upload with retries, local working directories

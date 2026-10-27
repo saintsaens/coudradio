@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { addTracks, loadChannelManifest, publishChannel, reencodeTracks, syncChannel } from '../maintenance.js';
+import {
+    addTracks,
+    bootstrapChannelManifest,
+    listChannels,
+    loadChannelManifest,
+    publishChannel,
+    reencodeTracks,
+    syncChannel,
+    verifyChannel,
+} from '../maintenance.js';
 import { buildChannelMpd, buildTrackList } from '../mpd/build.js';
 import { processTracks } from '../encoding/processTracks.js';
 import * as mpdRepository from '../../repositories/mpdRepository.js';
@@ -12,6 +21,7 @@ vi.mock('../../repositories/mpdRepository.js', () => ({
     getMpdContent: vi.fn(),
     getMpdStat: vi.fn(),
     getTrackList: vi.fn(),
+    listChannelNames: vi.fn(),
     uploadChannelManifest: vi.fn(),
     uploadMpd: vi.fn(),
     uploadTrackList: vi.fn(),
@@ -278,5 +288,82 @@ describe('loadChannelManifest', () => {
         vi.mocked(getTracks).mockResolvedValue([]);
 
         await expect(loadChannelManifest('lofi')).rejects.toThrow('No MPD found for channel "lofi"');
+    });
+});
+
+describe('bootstrapChannelManifest', () => {
+    const liveChannel = (xml = liveMpd) => {
+        vi.mocked(mpdRepository.getMpdStat).mockResolvedValue({ lastModified: new Date('2026-02-01T10:00:00Z') });
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(null);
+        vi.mocked(mpdRepository.getMpdContent).mockResolvedValue(xml);
+        vi.mocked(mpdRepository.uploadChannelManifest).mockResolvedValue('mpd/lofi/channel.json');
+        vi.mocked(getTracks).mockResolvedValue(sources);
+    };
+
+    it('skips a channel with no MPD, or one that already has a channel.json unless forced', async () => {
+        vi.mocked(mpdRepository.getMpdStat).mockResolvedValue(null);
+        expect(await bootstrapChannelManifest({ channel: 'lofi', write: true })).toEqual({ skipped: 'no-mpd' });
+
+        liveChannel();
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(manifest([]));
+        expect(await bootstrapChannelManifest({ channel: 'lofi', write: true })).toEqual({ skipped: 'exists' });
+        expect((await bootstrapChannelManifest({ channel: 'lofi', write: true, force: true })).objectPath).toBe('mpd/lofi/channel.json');
+    });
+
+    it('saves only with write, even when segment URLs point to another host', async () => {
+        liveChannel(liveMpd.replaceAll('https://radio.test/api', 'https://old.test/api'));
+
+        const dryRun = await bootstrapChannelManifest({ channel: 'lofi' });
+        expect(dryRun.objectPath).toBeNull();
+        expect(mpdRepository.uploadChannelManifest).not.toHaveBeenCalled();
+
+        const written = await bootstrapChannelManifest({ channel: 'lofi', write: true });
+        expect(written.urlDifferences.map((d) => [d.index, d.field])).toEqual([[0, 'initialization'], [0, 'media'], [1, 'initialization'], [1, 'media']]);
+        expect(written.blocking).toEqual([]);
+        expect(written.objectPath).toBe('mpd/lofi/channel.json');
+        expect(mpdRepository.uploadChannelManifest).toHaveBeenCalledWith('lofi', written.manifest);
+    });
+
+    it('does not save a manifest that would not reproduce the live MPD', async () => {
+        liveChannel(liveMpd.replace('audio_channel_configuration:2011', 'audio_channel_configuration:other'));
+
+        const result = await bootstrapChannelManifest({ channel: 'lofi', write: true });
+
+        expect(result.blocking.map((d) => [d.index, d.field])).toEqual([[0, 'audioChannelScheme']]);
+        expect(result.objectPath).toBeNull();
+        expect(mpdRepository.uploadChannelManifest).not.toHaveBeenCalled();
+    });
+});
+
+describe('listChannels', () => {
+    it('lists every channel, or only those with a channel.json', async () => {
+        vi.mocked(mpdRepository.listChannelNames).mockResolvedValue(['lofi', 'opera']);
+        vi.mocked(mpdRepository.getChannelManifest).mockImplementation(async (channel) => (channel === 'opera' ? manifest([]) : null));
+
+        expect(await listChannels()).toEqual(['lofi', 'opera']);
+        expect(await listChannels({ withManifest: true })).toEqual(['opera']);
+    });
+});
+
+describe('verifyChannel', () => {
+    it('reports missing segments, and no differences when there is no MPD', async () => {
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(manifest([track('track0', 10)]));
+        vi.mocked(listSegmentNames).mockResolvedValue(['track0_init.mp4', 'track0_1.m4s']);
+        vi.mocked(mpdRepository.getMpdContent).mockResolvedValue(null);
+
+        const result = await verifyChannel('lofi');
+
+        expect(result.segmentCount).toBe(2);
+        expect(result.problems.map((problem) => [problem.id, problem.missing])).toEqual([['track0', [2]]]);
+        expect(result.differences).toBeNull();
+    });
+
+    it('compares the channel with the live MPD', async () => {
+        const saved = manifest([track('track0', 10)]);
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(saved);
+        vi.mocked(listSegmentNames).mockResolvedValue([]);
+        vi.mocked(mpdRepository.getMpdContent).mockResolvedValue(buildChannelMpd(saved));
+
+        expect((await verifyChannel('lofi')).differences).toEqual([]);
     });
 });
