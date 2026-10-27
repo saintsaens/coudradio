@@ -61,7 +61,7 @@ const addContentToMpd = async (mpdPath, content) => {
     }
 };
 
-const createChannelMpdHeader = () => {
+export const createChannelMpdHeader = () => {
     const mpdHeader = `<?xml version="1.0" encoding="UTF-8"?>
     <MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="urn:mpeg:dash:schema:mpd:2011"
@@ -73,7 +73,7 @@ const createChannelMpdHeader = () => {
     return mpdHeader;
 };
 
-const createChannelMpdFooter = () => {
+export const createChannelMpdFooter = () => {
     const mpdFooter = `</MPD>`;
 
     return mpdFooter;

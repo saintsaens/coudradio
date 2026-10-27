@@ -10,6 +10,7 @@
     "start-server": "node server.js",
     "start-server-dev": "nodemon server.js",
     "create-channel": "node createChannel.js",
+    "channel": "node scripts/channel.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },

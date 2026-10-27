@@ -167,18 +167,28 @@ export const transformMpdIntoPeriod = async (index, sourceMpd, channel) => {
     const timescale = await extractTimescale(sourceMpd);
     const segmentTemplateDuration = await extractSegmentTemplateDuration(sourceMpd);
 
-    const initSegmentRoute = createInitSegmentRoute(index, channel);
-    const mediaSegmentRoute = createMediaSegmentRoute(index, channel);
+    return createPeriod({
+        id: `track${index}`,
+        adaptationSetId: index,
+        duration: periodDuration,
+        audioChannelConfiguration,
+        timescale,
+        segmentTemplateDuration,
+        initialization: createInitSegmentRoute(`track${index}`, channel),
+        media: createMediaSegmentRoute(`track${index}`, channel),
+    });
+};
 
-    return `<Period id="track${index}" duration="${periodDuration}">
-  <AdaptationSet id="${index}" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
-    <Representation id="track${index}" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
+export const createPeriod = ({ id, adaptationSetId, duration, audioChannelConfiguration, timescale, segmentTemplateDuration, initialization, media }) => {
+    return `<Period id="${id}" duration="${duration}">
+  <AdaptationSet id="${adaptationSetId}" contentType="audio" startWithSAP="1" segmentAlignment="true" bitstreamSwitching="true">
+    <Representation id="${id}" mimeType="audio/mp4" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="44100">
       ${audioChannelConfiguration}
       <SegmentTemplate
         timescale="${timescale}"
         duration="${segmentTemplateDuration}"
-        initialization="${initSegmentRoute}"
-        media="${mediaSegmentRoute}"
+        initialization="${initialization}"
+        media="${media}"
         startNumber="1" />
     </Representation>
   </AdaptationSet>
@@ -195,12 +205,12 @@ const createUnifiedMpdPeriods = async (tracks, singleMpdPaths, channel) => {
     return mpdPeriods.join('\n');
 };
 
-const createInitSegmentRoute = (trackIndex, channel) => {
-    return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_init.mp4`;
+export const createInitSegmentRoute = (segmentPrefix, channel) => {
+    return `${process.env.BACKEND_URL}/segment/${channel}/${segmentPrefix}_init.mp4`;
 };
 
-const createMediaSegmentRoute = (trackIndex, channel) => {
-    return `${process.env.BACKEND_URL}/segment/${channel}/track${trackIndex}_$Number$.m4s`;
+export const createMediaSegmentRoute = (segmentPrefix, channel) => {
+    return `${process.env.BACKEND_URL}/segment/${channel}/${segmentPrefix}_$Number$.m4s`;
 };
 
 export const uploadMpd = async (channelName) => {
@@ -252,7 +262,7 @@ export const getTotalPeriodsDurations = async (mpdPath) => {
 };
 
 // Helper function to convert ISO 8601 duration string to total seconds
-const iso8601DurationToSeconds = (duration) => {
+export const iso8601DurationToSeconds = (duration) => {
     const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(\d+(?:\.\d+)?)S/;
     const match = duration.match(regex);
     let hours = 0, minutes = 0, seconds = 0;
@@ -267,7 +277,7 @@ const iso8601DurationToSeconds = (duration) => {
 };
 
 // Helper function to convert total seconds back to ISO 8601 duration format
-const secondsToIso8601Duration = (totalSeconds) => {
+export const secondsToIso8601Duration = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
     totalSeconds %= 3600;
     const minutes = Math.floor(totalSeconds / 60);

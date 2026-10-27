@@ -19,6 +19,10 @@ npm test                   # Run vitest tests
 npm run lint               # ESLint check
 npm run lint:fix           # ESLint auto-fix
 npm run create-channel <name>  # Create a new radio channel
+npm run channel -- status [name…]       # Overview of all channels (MPD, duration, track count, manifest, inconsistencies)
+npm run channel -- tracks <name>        # Tracklist with start times and what's playing now (--sources to show source files)
+npm run channel -- verify <name>        # Check every segment exists in MinIO and the live MPD matches the channel
+npm run channel -- bootstrap <name|--all> [--write]  # Create channel.json from the live MPD (dry run without --write)
 ```
 
 ### Frontend (`/frontend`)
@@ -47,6 +51,8 @@ The core feature: audio tracks are encoded with FFmpeg into MPEG-DASH segments, 
 3. `trackEncodingService.js` / `segmentsService.js` — FFmpeg encoding and segment management
 4. `stream.js` route + `streamController.js` — serves MPD files; `segment.js` route serves audio chunks
 5. Frontend `AudioPlayer.jsx` uses DASH.js to consume the stream
+
+`channelManifestService.js` handles `mpd/<channel>/channel.json`, the per-channel manifest listing each track's segment prefix (`id`), source file, title, duration and segment template. The channel MPD and `tracks.json` can be regenerated from it; channels without one get it derived in memory from their live MPD.
 
 ### Backend Structure
 - **Routes** → **Controllers** → **Services** → **Repositories** (DB layer via `pg`)
