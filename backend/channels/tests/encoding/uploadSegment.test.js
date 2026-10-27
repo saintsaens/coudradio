@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { uploadSegment } from '../segmentsUploadingService.js';
-import { putSegmentObject } from '../../repositories/segmentsRepository.js';
+import { uploadSegment } from '../../encoding/uploadSegment.js';
+import { putSegmentObject } from '../../../repositories/segmentsRepository.js';
 
-vi.mock('../../repositories/segmentsRepository.js', () => ({
+vi.mock('../../../repositories/segmentsRepository.js', () => ({
     putSegmentObject: vi.fn(),
 }));
 

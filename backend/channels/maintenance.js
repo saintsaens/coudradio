@@ -1,22 +1,49 @@
 import * as mpdRepository from '../repositories/mpdRepository.js';
 import { listSegmentNames } from '../repositories/segmentsRepository.js';
 import { getTracks } from '../repositories/trackRepository.js';
-import { processTracks } from './trackProcessingService.js';
+import { processTracks } from './encoding/processTracks.js';
 import {
     applyManifestEdits,
-    buildChannelMpd,
-    buildTrackList,
-    compareManifestWithMpd,
-    compareWithSources,
+    bootstrapManifest,
     createManifest,
-    findSegmentProblems,
     insertTrack,
     isOutdated,
     nextTrackId,
-    parseChannelMpd,
     parseTrackSelection,
     titleFromSource,
-} from './channelManifestService.js';
+} from './manifest/manifest.js';
+import { compareManifestWithMpd, compareWithSources, findSegmentProblems } from './manifest/checks.js';
+import { buildChannelMpd, buildTrackList } from './mpd/build.js';
+import { parseChannelMpd } from './mpd/parse.js';
+
+export const bootstrapChannel = async (channel) => {
+    const [mpdXml, stat, trackList, sources] = await Promise.all([
+        mpdRepository.getMpdContent(channel),
+        mpdRepository.getMpdStat(channel),
+        mpdRepository.getTrackList(channel),
+        getTracks(channel).catch(() => null),
+    ]);
+    if (!mpdXml) {
+        throw new Error(`No MPD found for channel "${channel}"`);
+    }
+
+    const mpd = await parseChannelMpd(mpdXml);
+    const encodedAt = stat?.lastModified ? new Date(stat.lastModified).toISOString() : null;
+    const { manifest, warnings } = bootstrapManifest({ channel, periods: mpd.periods, sources, trackList, encodedAt });
+    const differences = await compareManifestWithMpd(manifest, mpd);
+    return { manifest, warnings, differences };
+};
+
+// Uses the saved manifest when there is one, otherwise derives it from the live MPD without saving it
+export const loadChannelManifest = async (channel) => {
+    const manifest = await mpdRepository.getChannelManifest(channel);
+    if (manifest) {
+        return { manifest, persisted: true, warnings: [] };
+    }
+
+    const { manifest: bootstrapped, warnings } = await bootstrapChannel(channel);
+    return { manifest: bootstrapped, persisted: false, warnings };
+};
 
 // Uploads channel.json, then the MPD and tracks.json generated from it. Segments must already be uploaded.
 export const publishChannel = async (manifest) => {

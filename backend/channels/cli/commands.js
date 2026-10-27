@@ -1,89 +1,26 @@
-#!/usr/bin/env node
-import './loadEnv.js';
 import fs from 'fs/promises';
-import * as mpdRepository from '../repositories/mpdRepository.js';
-import { listSegmentNames } from '../repositories/segmentsRepository.js';
-import { getTracks } from '../repositories/trackRepository.js';
+import * as mpdRepository from '../../repositories/mpdRepository.js';
+import { listSegmentNames } from '../../repositories/segmentsRepository.js';
+import { getTracks } from '../../repositories/trackRepository.js';
+import { describeTracks, isOutdated, LOUDNORM_DATE } from '../manifest/manifest.js';
+import { compareManifestWithMpd, compareWithSources, findSegmentProblems, isUrlDifference } from '../manifest/checks.js';
+import { parseChannelMpd } from '../mpd/parse.js';
+import { addTracks, bootstrapChannel, loadChannelManifest, reencodeTracks, syncChannel } from '../maintenance.js';
 import {
-    bootstrapChannel,
-    compareManifestWithMpd,
-    compareWithSources,
-    describeTracks,
-    findSegmentProblems,
-    isOutdated,
-    isUrlDifference,
-    LOUDNORM_DATE,
-    loadChannelManifest,
-    parseChannelMpd,
-} from './channelManifestService.js';
-import { addTracks, reencodeTracks, syncChannel } from './channelMaintenanceService.js';
+    formatClock,
+    formatDate,
+    formatList,
+    printDifferences,
+    printFailures,
+    printManifestOrigin,
+    printTitleChanges,
+} from './format.js';
 
-const USAGE = `Usage: npm run channel -- <command>
-
-  status [channel…]                 Overview of every channel, or of the given ones
-  tracks <channel> [--sources]      Tracklist with start times and what is playing now
-  verify <channel>                  Checks the segments in MinIO and that the live MPD matches the channel
-  bootstrap <channel…|--all> [--write] [--force]
-                                    Creates channel.json from the live MPD (dry run unless --write)
-  sync <channel…|--all> [--dry-run] Regenerates the MPD and tracks.json from channel.json
-  sync <channel> --file <path>      Applies an edited channel.json (reorder, remove, retitle, set sources)
-  export <channel> [path]           Saves channel.json locally for editing (default: ./<channel>.json)
-  add <channel> [file…] [--sorted] [--dry-run]
-                                    Encodes bucket files not in the channel yet and appends them
-                                    (--sorted inserts them in source order). Creates the channel if needed
-  reencode <channel> [#|from-to…] [--missing] [--outdated] [--all] [--force] [--dry-run]
-                                    Re-encodes tracks from their source file: given numbers, tracks with
-                                    missing segments, or tracks encoded before loudness normalization`;
-const DIFFERENCE_LABELS = {
-    initialization: 'init segment URL',
-    media: 'media segment URL',
-};
-
-const formatClock = (seconds) => {
-    const total = Math.floor(seconds);
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const secs = String(total % 60).padStart(2, '0');
-    return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${secs}` : `${minutes}:${secs}`;
-};
-
-const formatDate = (date) =>
-    date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
-
-const formatList = (items, max = 10) =>
-    items.length > max ? `${items.slice(0, max).join(', ')}, … (${items.length - max} more)` : items.join(', ');
+// Thrown when the arguments do not make a valid command: the CLI prints its usage
+export class UsageError extends Error {}
 
 const requireChannel = (channel) => {
-    if (!channel) {
-        console.error(USAGE);
-        process.exit(1);
-    }
-};
-
-const printManifestOrigin = (channel, manifest, persisted, warnings) => {
-    const origin = persisted ? 'channel.json' : 'no channel.json yet, derived from the live MPD';
-    console.log(`${channel}: ${manifest.tracks.length} tracks (${origin})`);
-    warnings.forEach((warning) => console.log(`⚠ ${warning}`));
-};
-
-const printDifferences = (differences, indent = '', marker = '✗') => {
-    const byField = new Map();
-    for (const difference of differences) {
-        byField.set(difference.field, [...(byField.get(difference.field) ?? []), difference]);
-    }
-    for (const [field, list] of byField) {
-        const [first] = list;
-        if (field === 'mpd') {
-            console.log(`${indent}${marker} No MPD yet`);
-            continue;
-        }
-        if (field === 'trackCount') {
-            console.log(`${indent}${marker} The live MPD has ${first.before} tracks, the channel has ${first.after}`);
-            continue;
-        }
-        const label = DIFFERENCE_LABELS[field] ?? field;
-        console.log(`${indent}${marker} ${list.length} tracks differ in ${label}, e.g. #${first.index}: ${first.before} → ${first.after}`);
-    }
+    if (!channel) throw new UsageError();
 };
 
 const getChannelStatus = async (channel) => {
@@ -288,12 +225,6 @@ const bootstrap = async (channels, flags) => {
     }
 };
 
-const printTitleChanges = (titleChanges, indent = '') => {
-    if (!titleChanges.length) return;
-    const [first] = titleChanges;
-    console.log(`${indent}~ ${titleChanges.length} titles change in tracks.json, e.g. #${first.index}: ${first.before ?? '(none)'} → ${first.after ?? '(removed)'}`);
-};
-
 const sync = async (channels, flags) => {
     const targets = flags.all
         ? (await Promise.all((await mpdRepository.listChannelNames()).map(async (channel) =>
@@ -333,13 +264,6 @@ const exportManifest = async ([channel, file]) => {
     console.log(`Edit titles, sources or the order, remove tracks, then run: npm run channel -- sync ${channel} --file ${target}`);
 };
 
-const printFailures = (failed) => {
-    if (!failed.length) return;
-    process.exitCode = 1;
-    console.log(`\n✗ ${failed.length} tracks failed:`);
-    failed.forEach(({ job, error }) => console.log(`  ${job.id} ${job.source}: ${error.message}`));
-};
-
 const add = async ([channel, ...files], flags) => {
     requireChannel(channel);
     const { jobs, skipped, added, failed } = await addTracks({ channel, files, sorted: flags.sorted, dryRun: flags['dry-run'] });
@@ -361,10 +285,7 @@ const add = async ([channel, ...files], flags) => {
 
 const reencode = async ([channel, ...selection], flags) => {
     requireChannel(channel);
-    if (!selection.length && !flags.missing && !flags.outdated && !flags.all) {
-        console.error(USAGE);
-        process.exit(1);
-    }
+    if (!selection.length && !flags.missing && !flags.outdated && !flags.all) throw new UsageError();
 
     const { jobs, reencoded, failed } = await reencodeTracks({
         channel,
@@ -390,31 +311,4 @@ const reencode = async ([channel, ...selection], flags) => {
     printFailures(failed);
 };
 
-const COMMANDS = { status, tracks, verify, bootstrap, sync, export: exportManifest, add, reencode };
-
-const VALUE_FLAGS = ['file'];
-const [command, ...rest] = process.argv.slice(2);
-const flags = {};
-const args = [];
-for (let index = 0; index < rest.length; index++) {
-    const arg = rest[index];
-    if (!arg.startsWith('--')) {
-        args.push(arg);
-        continue;
-    }
-    const name = arg.slice(2);
-    flags[name] = VALUE_FLAGS.includes(name) ? rest[++index] : true;
-}
-
-if (!COMMANDS[command]) {
-    console.error(USAGE);
-    process.exit(1);
-}
-
-try {
-    await COMMANDS[command](args, flags);
-} catch (err) {
-    console.error(`Error: ${err.message}`);
-    process.exitCode = 1;
-}
-process.exit();
+export const COMMANDS = { status, tracks, verify, bootstrap, sync, export: exportManifest, add, reencode };

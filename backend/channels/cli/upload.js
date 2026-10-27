@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { minioClient } from "../db-media/index.js";
+import { minioClient } from "../../db-media/index.js";
 
 const [, , sourceDir, bucket] = process.argv;
 

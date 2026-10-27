@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { addTracks, publishChannel, reencodeTracks, syncChannel } from '../channelMaintenanceService.js';
-import { buildChannelMpd } from '../channelManifestService.js';
-import { processTracks } from '../trackProcessingService.js';
+import { addTracks, loadChannelManifest, publishChannel, reencodeTracks, syncChannel } from '../maintenance.js';
+import { buildChannelMpd, buildTrackList } from '../mpd/build.js';
+import { processTracks } from '../encoding/processTracks.js';
 import * as mpdRepository from '../../repositories/mpdRepository.js';
 import { listSegmentNames } from '../../repositories/segmentsRepository.js';
 import { getTracks } from '../../repositories/trackRepository.js';
+import { liveMpd, sources } from './fixtures.js';
 
 vi.mock('../../repositories/mpdRepository.js', () => ({
     getChannelManifest: vi.fn(),
@@ -25,7 +26,7 @@ vi.mock('../../repositories/trackRepository.js', async (importOriginal) => ({
     getTracks: vi.fn(),
 }));
 
-vi.mock('../trackProcessingService.js', () => ({
+vi.mock('../encoding/processTracks.js', () => ({
     processTracks: vi.fn(),
 }));
 
@@ -242,5 +243,40 @@ describe('reencodeTracks', () => {
 
         expect(failed).toHaveLength(1);
         expect(mpdRepository.uploadMpd).not.toHaveBeenCalled();
+    });
+});
+
+describe('loadChannelManifest', () => {
+    it('returns the saved manifest when there is one', async () => {
+        const saved = { version: 1, channel: 'lofi', tracks: [] };
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(saved);
+
+        const result = await loadChannelManifest('lofi');
+
+        expect(result).toEqual({ manifest: saved, persisted: true, warnings: [] });
+        expect(mpdRepository.getMpdContent).not.toHaveBeenCalled();
+    });
+
+    it('derives the manifest from the live MPD when none is saved', async () => {
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(null);
+        vi.mocked(mpdRepository.getMpdContent).mockResolvedValue(liveMpd);
+        vi.mocked(mpdRepository.getMpdStat).mockResolvedValue({ lastModified: new Date('2026-02-01T10:00:00Z') });
+        vi.mocked(mpdRepository.getTrackList).mockResolvedValue(['A', 'B']);
+        vi.mocked(getTracks).mockResolvedValue(sources);
+
+        const { manifest, persisted } = await loadChannelManifest('lofi');
+
+        expect(persisted).toBe(false);
+        expect(buildTrackList(manifest)).toEqual(['A', 'B']);
+        expect(manifest.tracks[0].encodedAt).toBe('2026-02-01T10:00:00.000Z');
+    });
+
+    it('fails when the channel has no MPD', async () => {
+        vi.mocked(mpdRepository.getChannelManifest).mockResolvedValue(null);
+        vi.mocked(mpdRepository.getMpdContent).mockResolvedValue(null);
+        vi.mocked(mpdRepository.getTrackList).mockResolvedValue(null);
+        vi.mocked(getTracks).mockResolvedValue([]);
+
+        await expect(loadChannelManifest('lofi')).rejects.toThrow('No MPD found for channel "lofi"');
     });
 });

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs/promises';
-import { processTracks, uploadTrackSegments } from '../trackProcessingService.js';
-import { localChannelDirectoryFor, localTrackDirectoryFor, removeLocalDirectory } from '../fileSystemService.js';
-import { uploadSegment } from '../segmentsUploadingService.js';
-import { encodeTrack } from '../trackEncodingService.js';
-import { getTrackUrl } from '../../repositories/trackRepository.js';
+import { processTracks, uploadTrackSegments } from '../../encoding/processTracks.js';
+import { localChannelDirectoryFor, localTrackDirectoryFor, removeLocalDirectory } from '../../encoding/workdir.js';
+import { uploadSegment } from '../../encoding/uploadSegment.js';
+import { encodeTrack } from '../../encoding/encodeTrack.js';
+import { getTrackUrl } from '../../../repositories/trackRepository.js';
 
 vi.mock('fs/promises', () => ({
     default: {
@@ -13,21 +13,21 @@ vi.mock('fs/promises', () => ({
     },
 }));
 
-vi.mock('../fileSystemService.js', () => ({
+vi.mock('../../encoding/workdir.js', () => ({
     localChannelDirectoryFor: vi.fn(),
     localTrackDirectoryFor: vi.fn(),
     removeLocalDirectory: vi.fn(),
 }));
 
-vi.mock('../segmentsUploadingService.js', () => ({
+vi.mock('../../encoding/uploadSegment.js', () => ({
     uploadSegment: vi.fn(),
 }));
 
-vi.mock('../trackEncodingService.js', () => ({
+vi.mock('../../encoding/encodeTrack.js', () => ({
     encodeTrack: vi.fn(),
 }));
 
-vi.mock('../../repositories/trackRepository.js', () => ({
+vi.mock('../../../repositories/trackRepository.js', () => ({
     getTrackUrl: vi.fn(),
 }));
 
