@@ -69,10 +69,21 @@ export const findSegmentProblems = (manifest, segmentNames) => {
         })
         .filter((track) => !track.hasInit || track.missing.length > 0);
 
+    // Segments numbered past the duration mean the duration is too short or an older, longer encode left them behind.
+    // ffmpeg can end a track with one near-empty segment, so a single extra one is not reported.
+    const pastDuration = manifest.tracks
+        .map((track, index) => {
+            const expected = expectedSegmentCount(track);
+            const numbers = byPrefix.get(track.id)?.numbers ?? [];
+            const extra = [...numbers].filter((number) => number > expected).sort((a, b) => a - b);
+            return { index, id: track.id, title: track.title, expected, extra };
+        })
+        .filter((track) => track.extra.length > 1);
+
     const knownIds = new Set(manifest.tracks.map((track) => track.id));
     const orphanPrefixes = [...byPrefix.keys()]
         .filter((prefix) => !knownIds.has(prefix))
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-    return { problems, orphanPrefixes };
+    return { problems, pastDuration, orphanPrefixes };
 };

@@ -115,9 +115,9 @@ export const verifyChannel = async (channel) => {
         listSegmentNames(channel),
         mpdRepository.getMpdContent(channel),
     ]);
-    const { problems, orphanPrefixes } = findSegmentProblems(manifest, segmentNames);
+    const { problems, pastDuration, orphanPrefixes } = findSegmentProblems(manifest, segmentNames);
     const differences = mpdXml ? await compareManifestWithMpd(manifest, await parseChannelMpd(mpdXml)) : null;
-    return { manifest, persisted, warnings, segmentCount: segmentNames.length, problems, orphanPrefixes, differences };
+    return { manifest, persisted, warnings, segmentCount: segmentNames.length, problems, pastDuration, orphanPrefixes, differences };
 };
 
 // Uploads channel.json, then the MPD and tracks.json generated from it. Segments must already be uploaded.

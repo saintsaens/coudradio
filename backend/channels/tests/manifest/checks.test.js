@@ -82,4 +82,17 @@ describe('findSegmentProblems', () => {
         ]);
         expect(orphanPrefixes).toEqual(['track9', 'track10']);
     });
+
+    it('reports segments past a track duration, but not a single trailing one', () => {
+        const manifest = { tracks: [track('track0', 10), track('track1', 10)] };
+        const names = [
+            'track0_init.mp4', 'track0_1.m4s', 'track0_2.m4s', 'track0_3.m4s', 'track0_4.m4s', 'track0_5.m4s',
+            'track1_init.mp4', 'track1_1.m4s', 'track1_2.m4s', 'track1_3.m4s',
+        ];
+
+        const { problems, pastDuration } = findSegmentProblems(manifest, names);
+
+        expect(problems).toEqual([]);
+        expect(pastDuration).toEqual([{ index: 0, id: 'track0', title: 'track0', expected: 2, extra: [3, 4, 5] }]);
+    });
 });

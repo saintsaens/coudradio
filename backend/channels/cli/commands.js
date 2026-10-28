@@ -109,7 +109,7 @@ const tracks = async ([channel], flags) => {
 
 const verify = async ([channel]) => {
     requireChannel(channel);
-    const { manifest, persisted, warnings, segmentCount, problems, orphanPrefixes, differences } = await verifyChannel(channel);
+    const { manifest, persisted, warnings, segmentCount, problems, pastDuration, orphanPrefixes, differences } = await verifyChannel(channel);
     printManifestOrigin(channel, manifest, persisted, warnings);
     let healthy = true;
 
@@ -123,6 +123,10 @@ const verify = async ([channel]) => {
             issues.push(`${problem.missing.length} of ${problem.expected} segments missing (${formatList(problem.missing, 8)})`);
         }
         console.log(`✗ #${problem.index} ${problem.id} ${problem.title}: ${issues.join(', ')}`);
+    }
+    for (const track of pastDuration) {
+        console.log(`ℹ #${track.index} ${track.id} ${track.title}: ${track.extra.length} segments past the ${track.expected} its duration needs `
+            + `(${track.extra[0]}–${track.extra.at(-1)}): the duration may be too short, or they are left over from an older encode`);
     }
     if (orphanPrefixes.length) console.log(`ℹ Segments not used by the channel: ${formatList(orphanPrefixes, 8)}`);
 
