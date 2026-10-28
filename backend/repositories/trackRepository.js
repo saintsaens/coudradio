@@ -1,6 +1,5 @@
 import { minioClient } from "../db-media/index.js";
-
-const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.m4v', '.flac', '.mkv', '.mp4', '.webm', '.opus'];
+import { ALLOWED_EXTENSIONS } from "../utils/audioExtensions.js";
 
 export const getTrack = async (channel, trackName) => {
     try {

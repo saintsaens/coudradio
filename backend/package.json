@@ -5,11 +5,12 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "start-server": "node server.js",
     "start-server-dev": "nodemon server.js",
-    "create-channel": "node createChannel.js",
+    "channel": "node channels/cli/index.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
@@ -24,7 +25,6 @@
     "express": "^4.19.2",
     "express-promise-router": "^4.1.1",
     "express-session": "^1.18.1",
-    "ffmpeg": "^0.0.4",
     "fluent-ffmpeg": "^2.1.3",
     "https": "^1.0.0",
     "minio": "^8.0.3",
@@ -33,7 +33,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-google-oidc": "^0.1.0",
     "pg": "^8.13.1",
-    "stripe": "^17.6.0"
+    "stripe": "^17.6.0",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

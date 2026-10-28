@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getSegment, putSegmentObject, getSegmentObject } from '../../repositories/segmentsRepository.js';
+import { EventEmitter } from 'events';
+import { getSegment, putSegmentObject, getSegmentObject, listSegmentNames } from '../../repositories/segmentsRepository.js';
 import { minioClient } from '../../db-media/index.js';
 import { createReadStream } from 'fs';
 
@@ -7,6 +8,7 @@ vi.mock('../../db-media/index.js', () => ({
     minioClient: {
         getObject: vi.fn(),
         putObject: vi.fn(),
+        listObjects: vi.fn(),
     },
 }));
 
@@ -69,5 +71,22 @@ describe('getSegmentObject', () => {
             'segments/lofi/track0_init.mp4'
         );
         expect(result).toBe(mockStream);
+    });
+});
+
+describe('listSegmentNames', () => {
+    it('returns the segment names of a channel without their prefix', async () => {
+        const stream = new EventEmitter();
+        vi.mocked(minioClient.listObjects).mockReturnValue(stream);
+        process.nextTick(() => {
+            stream.emit('data', { name: 'segments/lofi/track0_init.mp4' });
+            stream.emit('data', { name: 'segments/lofi/track0_1.m4s' });
+            stream.emit('end');
+        });
+
+        const result = await listSegmentNames('lofi');
+
+        expect(minioClient.listObjects).toHaveBeenCalledWith('test-segments-bucket', 'segments/lofi/', true);
+        expect(result).toEqual(['track0_init.mp4', 'track0_1.m4s']);
     });
 });

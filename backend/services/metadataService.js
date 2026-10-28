@@ -1,6 +1,8 @@
 import xml2js from 'xml2js';
 import { getMpd, getTrackList } from '../repositories/mpdRepository.js';
+import { PLAYLIST_START } from '../utils/playlistClock.js';
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map();
 
 const streamToString = (stream) => new Promise((resolve, reject) => {
@@ -31,16 +33,17 @@ const buildCache = async (channel) => {
     const tracks = await getTrackList(channel);
     if (!tracks) console.info(`[metadataService] No tracks.json found for channel "${channel}", track info will be unavailable.`);
 
-    cache.set(channel, { tracks, durations, total });
+    cache.set(channel, { tracks, durations, total, builtAt: Date.now() });
 };
 
+const isFresh = (entry) => entry && Date.now() - entry.builtAt < CACHE_TTL_MS;
+
 export const getCurrentTrack = async (channel) => {
-    if (!cache.has(channel)) {
+    if (!isFresh(cache.get(channel))) {
         await buildCache(channel);
     }
     const { tracks, durations, total } = cache.get(channel);
     if (!tracks) return { track: null, nextTrackIn: null };
-    const PLAYLIST_START = new Date('2024-05-04T13:37:00+01:00').getTime() / 1000;
     let position = ((Date.now() / 1000) - PLAYLIST_START) % total;
     for (let i = 0; i < durations.length; i++) {
         if (position < durations[i]) return { track: tracks[i], nextTrackIn: durations[i] - position };
