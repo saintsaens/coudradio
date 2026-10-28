@@ -1,0 +1,19 @@
+{
+  "name": "coudradio-tui",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "coudradio": "./index.jsx"
+  },
+  "scripts": {
+    "start": "tsx index.jsx"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "ink": "^5.0.0",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}
