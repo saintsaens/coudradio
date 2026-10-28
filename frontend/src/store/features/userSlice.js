@@ -2,7 +2,28 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
+// Dev only: VITE_DEV_LOGGED_IN=true fakes a logged-in subscriber, to preview the connected UI without OAuth
+const isDevLoggedIn = () => import.meta.env.DEV && import.meta.env.VITE_DEV_LOGGED_IN === 'true';
+
+const devUser = () => {
+    const now = new Date().toISOString();
+    return {
+        userId: 'mock-user',
+        username: 'mock',
+        role: 'user',
+        sessionStartTime: now,
+        lastActivity: now,
+        timeSpent: 0,
+        isSubscriber: true,
+        email: 'mock@localhost'
+    };
+};
+
 export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
+    if (isDevLoggedIn()) {
+        return devUser();
+    }
+
     const response = await fetch(`${baseUrl}/auth/user/profile`, {
         credentials: 'include'
     });

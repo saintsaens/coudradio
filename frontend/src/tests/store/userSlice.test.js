@@ -107,6 +107,22 @@ describe('fetchUser thunk — behavior', () => {
         });
     });
 
+    it('resolves with a fake subscriber without calling the backend when VITE_DEV_LOGGED_IN is true', async () => {
+        const fetchSpy = vi.spyOn(global, 'fetch');
+        import.meta.env.VITE_DEV_LOGGED_IN = 'true';
+
+        try {
+            const store = makeStore();
+            const result = await store.dispatch(fetchUser());
+
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(fetchUser.fulfilled.match(result)).toBe(true);
+            expect(result.payload).toMatchObject({ username: 'mock', isSubscriber: true });
+        } finally {
+            delete import.meta.env.VITE_DEV_LOGGED_IN;
+        }
+    });
+
     it('rejects with Not logged in on non-200', async () => {
         vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false });
 
