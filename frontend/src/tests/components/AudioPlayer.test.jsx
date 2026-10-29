@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRef } from 'react';
 import { act, waitFor } from '@testing-library/react';
 import { renderWithStore } from '../testUtils.jsx';
@@ -10,6 +10,7 @@ vi.mock('dashjs', () => {
         PLAYBACK_NOT_ALLOWED: 'playbackNotAllowed',
         FRAGMENT_LOADING_COMPLETED: 'fragmentLoadingCompleted',
         PLAYBACK_PLAYING: 'playbackPlaying',
+        ERROR: 'error',
     };
     const create = () => ({
         initialize: vi.fn(),
@@ -71,5 +72,52 @@ describe('AudioPlayer loading progress', () => {
         fragmentLoaded('MediaSegment', { message: 'network error' });
         fragmentLoaded('IndexSegment');
         expect(progress()).toBe(50);
+    });
+});
+
+describe('AudioPlayer errors', () => {
+    const DECODE_ERROR = 3;
+    const MEDIA_SEGMENT_DOWNLOAD_ERROR = 27;
+
+    beforeEach(() => {
+        mockPlayer.handlers = {};
+        mockPlayer.manifest = { mediaPresentationDuration: 3600 };
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    const renderLoadedPlayer = async () => {
+        const { store } = renderWithStore(<AudioPlayer audioRef={createRef()} channelName="test" />);
+        await waitFor(() => expect(store.getState().audioPlayer.loadingProgress).toBe(50));
+        return () => store.getState().audioPlayer;
+    };
+
+    const playerError = (code) => act(() => mockPlayer.handlers.error({ error: { code, message: 'boom' } }));
+    const playbackStarts = () => act(() => mockPlayer.handlers.playbackPlaying());
+
+    it('shows an error for any failure before playback starts', async () => {
+        const state = await renderLoadedPlayer();
+
+        playerError(MEDIA_SEGMENT_DOWNLOAD_ERROR);
+        expect(state().error).toBe(true);
+    });
+
+    it('ignores download errors once playing, since dash.js retries them', async () => {
+        const state = await renderLoadedPlayer();
+        playbackStarts();
+
+        playerError(MEDIA_SEGMENT_DOWNLOAD_ERROR);
+        expect(state().error).toBe(false);
+        expect(state().playing).toBe(true);
+    });
+
+    it('shows an error and stops playing on a media element error once playing', async () => {
+        const state = await renderLoadedPlayer();
+        playbackStarts();
+
+        playerError(DECODE_ERROR);
+        expect(state().error).toBe(true);
+        expect(state().playing).toBe(false);
     });
 });

@@ -18,6 +18,8 @@ const audioPlayerSlice = createSlice({
     },
     setError(state, action) {
       state.error = action.payload;
+      // The player is torn down on error, so a retry starts from the loading screen
+      if (action.payload) state.playing = false;
     },
     setPlaying(state, action) {
       state.playing = action.payload;

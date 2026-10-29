@@ -25,6 +25,12 @@ describe('audioPlayerSlice — reducers', () => {
         expect(reducer(initialState, setError(true)).error).toBe(true);
     });
 
+    it('setError(true) stops playing, setError(false) leaves it alone', () => {
+        const playingState = { ...initialState, playing: true };
+        expect(reducer(playingState, setError(true)).playing).toBe(false);
+        expect(reducer(playingState, setError(false)).playing).toBe(true);
+    });
+
     it('setPlaying updates playing', () => {
         expect(reducer(initialState, setPlaying(true)).playing).toBe(true);
     });

@@ -6,6 +6,8 @@ import { setMuted, setError, setPlaying, setLoadingProgress } from "../store/fea
 import Background from "./Background.jsx";
 
 const SEGMENT_PROGRESS = { InitializationSegment: 75, MediaSegment: 100 };
+// MediaError codes (aborted, network, decode, source not supported): dash.js resets itself after these
+const MEDIA_ELEMENT_ERROR_CODES = [1, 2, 3, 4];
 
 const AudioPlayer = ({ audioRef, channelName }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -36,7 +38,17 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       dispatch(setLoadingProgress(progress));
     });
 
+    // Before playback, any error ends the wait on the loading screen. Once playing, dash.js retries failed
+    // downloads on its own, so only media element errors stop playback for good.
+    let started = false;
+    player.on(dashjs.MediaPlayer.events.ERROR, (e) => {
+      console.error("Playback error:", e.error);
+      if (started && !MEDIA_ELEMENT_ERROR_CODES.includes(e.error?.code)) return;
+      dispatch(setError(true));
+    });
+
     player.on(dashjs.MediaPlayer.events.PLAYBACK_PLAYING, () => {
+      started = true;
       dispatch(setPlaying(true));
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
