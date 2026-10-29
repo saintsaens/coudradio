@@ -28,8 +28,6 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       dispatch(setMuted(true));
       video.play().catch((err) => console.error("Muted playback failed:", err));
     });
-    // Advance the loading bar at each download playback waits on: manifest (50), init segment, first media segment.
-    // The buffer level can't drive it, since it stays at 0 until the first segment is appended, right before playback.
     let progress = 50;
     player.on(dashjs.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (e) => {
       const milestone = SEGMENT_PROGRESS[e.request?.type];
@@ -77,7 +75,6 @@ const AudioPlayer = ({ audioRef, channelName }) => {
     setupPlayer(video);
     const currentPlayer = player;
 
-    // Fetch the MPD once: read the playlist duration from it, then hand the parsed manifest to dash.js
     let manifest;
     try {
       manifest = await retrieveManifest(currentPlayer);
@@ -87,7 +84,6 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       return;
     }
 
-    // Player was reset (unmount or channel switch) while the manifest was loading
     if (player !== currentPlayer) return;
 
     const duration = manifest.mediaPresentationDuration;
