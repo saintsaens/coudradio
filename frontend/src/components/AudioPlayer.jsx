@@ -5,6 +5,8 @@ import { useDispatch } from "react-redux";
 import { setMuted, setError, setPlaying, setLoadingProgress } from "../store/features/audioPlayerSlice.js";
 import Background from "./Background.jsx";
 
+const SEGMENT_PROGRESS = { InitializationSegment: 75, MediaSegment: 100 };
+
 const AudioPlayer = ({ audioRef, channelName }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const src = `${backendUrl}/${channelName}`;
@@ -26,9 +28,13 @@ const AudioPlayer = ({ audioRef, channelName }) => {
       dispatch(setMuted(true));
       video.play().catch((err) => console.error("Muted playback failed:", err));
     });
-    player.on(dashjs.MediaPlayer.events.BUFFER_LEVEL_UPDATED, (e) => {
-      const bufferLevel = e.bufferLevel ?? 0;
-      const progress = Math.min(Math.round(50 + (bufferLevel / 5) * 50), 99);
+    // Advance the loading bar at each download playback waits on: manifest (50), init segment, first media segment.
+    // The buffer level can't drive it, since it stays at 0 until the first segment is appended, right before playback.
+    let progress = 50;
+    player.on(dashjs.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (e) => {
+      const milestone = SEGMENT_PROGRESS[e.request?.type];
+      if (e.error || !milestone || milestone <= progress) return;
+      progress = milestone;
       dispatch(setLoadingProgress(progress));
     });
 
