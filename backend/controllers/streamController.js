@@ -1,3 +1,4 @@
+import zlib from "zlib";
 import * as mpdService from "../services/mpdService.js"
 
 export const getStream = async (req, res, next) => {
@@ -11,10 +12,18 @@ export const getStream = async (req, res, next) => {
         const channelStream = await mpdService.getMpdStream(channel);
 
         res.setHeader('Content-Type', 'application/dash+xml');
-        channelStream.pipe(res);
+        res.setHeader('Vary', 'Accept-Encoding');
         channelStream.on('error', (err) => {
             next(err);
         });
+
+        // MPDs are large, highly repetitive XML: gzip shrinks them by ~95%
+        if (req.acceptsEncodings('gzip') === 'gzip') {
+            res.setHeader('Content-Encoding', 'gzip');
+            channelStream.pipe(zlib.createGzip()).pipe(res);
+        } else {
+            channelStream.pipe(res);
+        }
     } catch (err) {
         next(err);
     }
