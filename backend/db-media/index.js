@@ -12,7 +12,7 @@ export const minioClient = new Minio.Client({
 });
 
 minioClient.listBuckets().then(() => {
-    console.log('Connected to MinIO successfully!');
+    if (process.env.MINIO_QUIET !== 'true') console.log('Connected to MinIO successfully!');
 }).catch((err) => {
     console.error('Problem connecting to MinIO. Check endpoint/port/SSL settings and whether a firewall or Cloudflare is blocking this server\'s IP.');
     console.error('  endPoint:', process.env.MINIO_ENDPOINT);

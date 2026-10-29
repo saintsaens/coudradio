@@ -5,8 +5,11 @@ import Box from '@mui/material/Box';
 import FullOverlay from "./FullOverlay";
 import { useSelector } from 'react-redux';
 
-const Loading = () => {
+const Loading = ({ channelName }) => {
     const loadingProgress = useSelector((state) => state.audioPlayer.loadingProgress);
+    const message = loadingProgress < 50
+        ? `Connecting to ${channelName}…`
+        : 'Loading audio…';
 
     return (
         <Fade in timeout={300}>
@@ -25,6 +28,9 @@ const Loading = () => {
                             backgroundColor: 'rgba(255, 193, 7, 0.2)',
                         }}
                     />
+                    <Box sx={{ textAlign: 'center', mt: 1.5, color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
+                        {message}
+                    </Box>
                 </Box>
             </FullOverlay>
         </Fade>

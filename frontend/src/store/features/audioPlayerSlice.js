@@ -1,34 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { parseISODuration } from "../../utils/time.js";
-
-export const checkStream = createAsyncThunk(
-  "audioPlayer/checkStream",
-  async (src, { rejectWithValue }) => {
-    try {
-      const cacheKey = `mpd_duration:${src}`;
-      const cached = sessionStorage.getItem(cacheKey);
-
-      if (cached) {
-        const response = await fetch(src, { method: "HEAD" });
-        if (!response.ok) return rejectWithValue("Stream is unavailable");
-        return parseFloat(cached);
-      }
-
-      const response = await fetch(src);
-      if (!response.ok) return rejectWithValue("Stream is unavailable");
-      const text = await response.text();
-      const doc = new DOMParser().parseFromString(text, "application/xml");
-      const iso = doc.querySelector("MPD")?.getAttribute("mediaPresentationDuration");
-      const duration = iso ? parseISODuration(iso) : null;
-      if (!duration) return rejectWithValue("Could not parse MPD duration");
-      sessionStorage.setItem(cacheKey, duration.toString());
-      return duration;
-    } catch (error) {
-      console.error("Error fetching stream:", error);
-      return rejectWithValue("Network error");
-    }
-  }
-);
+import { createSlice } from "@reduxjs/toolkit";
 
 const audioPlayerSlice = createSlice({
   name: "audioPlayer",
@@ -48,6 +18,8 @@ const audioPlayerSlice = createSlice({
     },
     setError(state, action) {
       state.error = action.payload;
+      // The player is torn down on error, so a retry starts from the loading screen
+      if (action.payload) state.playing = false;
     },
     setPlaying(state, action) {
       state.playing = action.payload;
@@ -55,19 +27,6 @@ const audioPlayerSlice = createSlice({
     setLoadingProgress(state, action) {
       state.loadingProgress = action.payload;
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(checkStream.pending, (state) => {
-        state.loadingProgress = 0;
-      })
-      .addCase(checkStream.rejected, (state, _action) => {
-        state.error = true;
-      })
-      .addCase(checkStream.fulfilled, (state) => {
-        state.error = false;
-        state.loadingProgress = 50;
-      });
   },
 });
 

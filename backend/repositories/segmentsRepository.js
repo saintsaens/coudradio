@@ -23,3 +23,15 @@ export const getSegmentObject = async (objectName) => {
   const bucket = process.env.MINIO_SEGMENTS_BUCKET;
   return minioClient.getObject(bucket, objectName);
 };
+
+export const listSegmentNames = async (channelName) => {
+  const bucket = process.env.MINIO_SEGMENTS_BUCKET;
+  const prefix = `${process.env.MINIO_SEGMENTS_PATH}/${channelName}/`;
+  const names = [];
+  const stream = minioClient.listObjects(bucket, prefix, true);
+  return new Promise((resolve, reject) => {
+    stream.on('data', (obj) => names.push(obj.name.slice(prefix.length)));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(names));
+  });
+};

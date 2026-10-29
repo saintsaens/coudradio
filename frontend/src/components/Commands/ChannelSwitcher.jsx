@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setSelectedIndex, closeSwitcher, toggleSwitcher } from "../../store/features/channelSwitcherSlice";
-import { prefetchMPDDuration } from "../../utils/time.js";
 import { Modal, Box, List, ListItem, ListItemButton, ListItemText, InputBase } from "@mui/material";
+
+const VISIBLE_ROWS = 9;
+// Row height: 1.3rem text at line-height 1.5, plus 6px of padding above and below
+const ROW_HEIGHT = 'calc(1.3rem * 1.5 + 12px)';
 
 const ChannelSwitcher = () => {
     const { currentChannel, selectedIndex, isSwitcherOpen } = useSelector((state) => state.channelSwitcher);
     const { channelList } = useSelector((state) => state.user);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -26,6 +28,7 @@ const ChannelSwitcher = () => {
     );
 
     const searchInputRef = useRef(null);
+    const itemRefs = useRef([]);
 
     const handleKeyPress = (event) => {
         const isCmdK = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
@@ -65,10 +68,8 @@ const ChannelSwitcher = () => {
     };
 
     useEffect(() => {
-        const item = filteredItems[selectedIndex];
-        if (item) prefetchMPDDuration(`${backendUrl}/${item}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedIndex, filteredItems]);
+        itemRefs.current[selectedIndex]?.scrollIntoView?.({ block: 'nearest' });
+    }, [selectedIndex, isSwitcherOpen, searchQuery]);
 
     useEffect(() => {
         document.addEventListener('keydown', handleKeyPress);
@@ -133,10 +134,14 @@ const ChannelSwitcher = () => {
                 <List disablePadding
                     sx={{
                         paddingBottom: 0.5,
+                        maxHeight: `calc(${VISIBLE_ROWS} * ${ROW_HEIGHT} + 4px)`,
+                        overflowY: 'auto',
+                        scrollbarWidth: 'thin',
                     }}
                 >
                     {filteredItems.map((item, index) => (
                         <ListItem key={index} disablePadding
+                            ref={(el) => { itemRefs.current[index] = el; }}
                             sx={{
                                 bgcolor: selectedIndex === index ? 'fourth.main' : 'transparent', // Change background color when selected
                             }}
@@ -149,15 +154,16 @@ const ChannelSwitcher = () => {
                                 }}
                                 sx={{
                                     paddingX: 1,
-                                    paddingY: 0.25,
+                                    paddingY: 0.75,
                                     color: selectedIndex === index ? 'primary.main' : 'inherit', // Change text color when selected
                                 }}
                             >
                                 <ListItemText
                                     primary={item}
+                                    sx={{ margin: 0 }}
                                     slotProps={{
                                         primary: {
-                                            sx: { fontSize: "1.3rem" }
+                                            sx: { fontSize: "1.3rem", lineHeight: 1.5 }
                                         }
                                     }}
                                 />
